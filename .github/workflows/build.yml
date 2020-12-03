@@ -23,7 +23,6 @@ jobs:
           key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
-      - run: git fetch --no-tags --prune --depth=5 origin main
       - run: yarn install
       - run: yarn format
       - run: yarn lint
