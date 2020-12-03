@@ -31,6 +31,7 @@ function run() {
             core_1.endGroup();
             core_1.startGroup('Publish to GPR');
             core_1.endGroup();
+            core_1.setFailed('Failed just cause');
         }
         catch (error) {
             console.log('Error');
