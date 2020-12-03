@@ -1,5 +1,5 @@
 name: '@pqt/publish'
-description: 'A comprehensive GitHub Action that helps you (mostly) automate publishing a package – or monorepo of packages – to NPM and GitHub Packages. Correctly tagged and tries it's best to do it all without conflicts.'
+# description: 'A comprehensive GitHub Action that helps you (mostly) automate publishing a package – or monorepo of packages – to NPM and GitHub Packages. Correctly tagged and tries it's best to do it all without conflicts.'
 author: 'Austin Paquette'
 
 runs:
