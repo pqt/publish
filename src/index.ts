@@ -11,6 +11,8 @@ export async function run(): Promise<void> {
     endGroup();
     startGroup('Publish to GPR');
     endGroup();
+
+    setFailed('Failed just cause');
   } catch (error) {
     console.log('Error');
     setFailed(error);
