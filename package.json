@@ -1,0 +1,15 @@
+{
+  "name": "@pqt/publish",
+  "version": "0.0.0",
+  "main": "dist/index.js",
+  "repository": "https://github.com/pqt/publish",
+  "author": "Austin Paquette <austin.paquette@forcir.com>",
+  "scripts": {
+    "build": "tsc",
+    "package": "ncc build --source-map"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core": "^1.2.6"
+  }
+}
