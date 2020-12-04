@@ -6,15 +6,7 @@ import { context, getOctokit } from '@actions/github';
  */
 export async function run(): Promise<void> {
   try {
-    startGroup('Complete context log');
     console.log(JSON.stringify(context));
-    endGroup();
-    startGroup('Check Version');
-    endGroup();
-    startGroup('Publish to NPM');
-    endGroup();
-    startGroup('Publish to GPR');
-    endGroup();
 
     setFailed('Failed just cause');
   } catch (error) {
