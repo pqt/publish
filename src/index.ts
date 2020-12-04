@@ -17,6 +17,14 @@ export async function run(): Promise<void> {
     endGroup();
 
     /**
+     * Log the available environment variables
+     * TODO: Move to debugging ONLY before production
+     */
+    startGroup('[REMOVE] Environment Variables');
+    console.log(JSON.stringify(process.env));
+    endGroup();
+
+    /**
      * Kill the action if we can't find a repository in the payload
      */
     if (typeof context.payload.repository === 'undefined') {
@@ -68,9 +76,10 @@ export async function run(): Promise<void> {
         return;
       }
 
-      const distFolder = './dist/';
+      const buildFolder = 'dist';
 
-      const paths = await globby([distFolder, '**', 'package.json']);
+      // const paths = await globby([process.env.GITHUB_WORKSPACE, distFolder, '**', 'package.json']);
+      const paths = await globby(['**', buildFolder, '**', 'package.json']);
       console.log(paths);
 
       // const checks = [

@@ -39,6 +39,13 @@ function run() {
             console.log(JSON.stringify(github_1.context));
             core_1.endGroup();
             /**
+             * Log the available environment variables
+             * TODO: Move to debugging ONLY before production
+             */
+            core_1.startGroup('[REMOVE] Environment Variables');
+            console.log(JSON.stringify(process.env));
+            core_1.endGroup();
+            /**
              * Kill the action if we can't find a repository in the payload
              */
             if (typeof github_1.context.payload.repository === 'undefined') {
@@ -85,8 +92,9 @@ function run() {
                     core_1.setFailed('Could not find the pull_request context.');
                     return;
                 }
-                const distFolder = './dist/';
-                const paths = yield globby_1.default([distFolder, '**', 'package.json']);
+                const buildFolder = 'dist';
+                // const paths = await globby([process.env.GITHUB_WORKSPACE, distFolder, '**', 'package.json']);
+                const paths = yield globby_1.default(['**', buildFolder, '**', 'package.json']);
                 console.log(paths);
                 // const checks = [
                 //   {
