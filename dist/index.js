@@ -138,20 +138,34 @@ function run() {
                 //   head_sha: sha,
                 //   status: 'queued',
                 // });
-                (() => __awaiter(this, void 0, void 0, function* () {
-                    console.log(`Starting status checks for commit ${sha}`);
-                    yield Promise.all([
-                        {
-                            name: 'My Check',
-                            callback: () => __awaiter(this, void 0, void 0, function* () { return 'Check passed!'; }),
+                console.log(`Starting status checks for commit ${sha}`);
+                yield Promise.all([
+                    {
+                        name: 'My Check',
+                        callback: () => __awaiter(this, void 0, void 0, function* () { return 'Check passed!'; }),
+                    },
+                ].map((check) => __awaiter(this, void 0, void 0, function* () {
+                    const { name, callback } = check;
+                    yield node_fetch_1.default(`https://api.github.com/repos/pqt/nhl/statuses/${sha}`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            state: 'pending',
+                            description: 'Running check..',
+                            context: name,
+                        }),
+                        headers: {
+                            Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                            'Content-Type': 'application/json',
                         },
-                    ].map((check) => __awaiter(this, void 0, void 0, function* () {
-                        const { name, callback } = check;
+                    });
+                    // await setStatus(statusCheckUrl, name, 'pending', 'Running check..');
+                    try {
+                        const response = yield callback();
                         yield node_fetch_1.default(`https://api.github.com/repos/pqt/nhl/statuses/${sha}`, {
                             method: 'POST',
                             body: JSON.stringify({
-                                state: 'pending',
-                                description: 'Running check..',
+                                state: 'success',
+                                description: response,
                                 context: name,
                             }),
                             headers: {
@@ -159,41 +173,25 @@ function run() {
                                 'Content-Type': 'application/json',
                             },
                         });
-                        // await setStatus(statusCheckUrl, name, 'pending', 'Running check..');
-                        try {
-                            const response = yield callback();
-                            yield node_fetch_1.default(`https://api.github.com/repos/pqt/nhl/statuses/${sha}`, {
-                                method: 'POST',
-                                body: JSON.stringify({
-                                    state: 'success',
-                                    description: response,
-                                    context: name,
-                                }),
-                                headers: {
-                                    Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-                                    'Content-Type': 'application/json',
-                                },
-                            });
-                            // await setStatus(statusCheckUrl, name, 'success', response);
-                        }
-                        catch (error) {
-                            const message = error ? error.message : 'Something went wrong';
-                            yield node_fetch_1.default(`https://api.github.com/repos/pqt/nhl/statuses/${sha}`, {
-                                method: 'POST',
-                                body: JSON.stringify({
-                                    state: 'success',
-                                    description: message,
-                                    context: name,
-                                }),
-                                headers: {
-                                    Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-                                    'Content-Type': 'application/json',
-                                },
-                            });
-                        }
-                    })));
-                    console.log('Finished status checks');
-                }))();
+                        // await setStatus(statusCheckUrl, name, 'success', response);
+                    }
+                    catch (error) {
+                        const message = error ? error.message : 'Something went wrong';
+                        yield node_fetch_1.default(`https://api.github.com/repos/pqt/nhl/statuses/${sha}`, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                state: 'success',
+                                description: message,
+                                context: name,
+                            }),
+                            headers: {
+                                Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                                'Content-Type': 'application/json',
+                            },
+                        });
+                    }
+                })));
+                console.log('Finished status checks');
                 // await client.checks
                 //   .create({
                 //     owner: 'pqt',
