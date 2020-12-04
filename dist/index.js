@@ -115,7 +115,20 @@ function run() {
                 // });
                 yield Promise.all(paths.map((manifest) => __awaiter(this, void 0, void 0, function* () {
                     const { name, version } = yield read_manifest_1.readManifest(manifest);
-                    console.log(name, version);
+                    // console.log(name, version);
+                    yield node_fetch_1.default(`https://api.github.com/repos/pqt/nhl/statuses/${github_1.context.payload.after}`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            state: 'pending',
+                            // description: 'Running check..',
+                            description: version.version,
+                            context: name,
+                        }),
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                        },
+                    });
                 })));
                 // const checks = [
                 //   {

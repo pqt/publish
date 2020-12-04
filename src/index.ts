@@ -104,7 +104,21 @@ export async function run(): Promise<void> {
       await Promise.all(
         paths.map(async (manifest) => {
           const { name, version } = await readManifest(manifest);
-          console.log(name, version);
+          // console.log(name, version);
+
+          await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
+            method: 'POST',
+            body: JSON.stringify({
+              state: 'pending',
+              // description: 'Running check..',
+              description: version.version,
+              context: name,
+            }),
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
         })
       );
 
