@@ -26,15 +26,7 @@ const github_1 = __webpack_require__(438);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            core_1.startGroup('Complete context log');
             console.log(JSON.stringify(github_1.context));
-            core_1.endGroup();
-            core_1.startGroup('Check Version');
-            core_1.endGroup();
-            core_1.startGroup('Publish to NPM');
-            core_1.endGroup();
-            core_1.startGroup('Publish to GPR');
-            core_1.endGroup();
             core_1.setFailed('Failed just cause');
         }
         catch (error) {
