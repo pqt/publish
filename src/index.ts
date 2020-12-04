@@ -2,6 +2,7 @@ import { endGroup, getInput, setFailed, startGroup } from '@actions/core';
 import { context, getOctokit } from '@actions/github';
 import globby from 'globby';
 import fetch from 'node-fetch';
+import { readManifest } from './utils/read-manifest';
 
 /**
  * The entrypoint for the GitHub Action
@@ -94,7 +95,18 @@ export async function run(): Promise<void> {
           files: ['package.json'],
         },
       });
-      console.log(paths);
+      // console.log(paths);
+
+      // paths.forEach(async (manifest) => {
+      //   const { name, version } = await readManifest(manifest);
+      //   console.log(name, version);
+      // });
+      await Promise.all(
+        paths.map(async (manifest) => {
+          const { name, version } = await readManifest(manifest);
+          console.log(name, version);
+        })
+      );
 
       // const checks = [
       //   {

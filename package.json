@@ -18,12 +18,14 @@
     "@actions/core": "^1.2.6",
     "@actions/github": "^4.0.0",
     "globby": "^11.0.1",
-    "node-fetch": "^2.6.1"
+    "node-fetch": "^2.6.1",
+    "semver": "^7.3.4"
   },
   "devDependencies": {
     "@pqt/eslint-config": "^0.0.17",
     "@pqt/prettier-config": "^0.0.8",
     "@types/node-fetch": "^2.5.7",
+    "@types/semver": "^7.3.4",
     "@vercel/ncc": "^0.25.1",
     "eslint": "^7.14.0",
     "husky": "^4.3.0",
