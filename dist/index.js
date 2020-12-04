@@ -16,10 +16,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.run = void 0;
 const core_1 = __webpack_require__(186);
 const github_1 = __webpack_require__(438);
+const node_fetch_1 = __importDefault(__webpack_require__(467));
 /**
  * The entrypoint for the GitHub Action
  */
@@ -130,40 +134,96 @@ function run() {
                 //   head_sha: sha,
                 //   status: 'queued',
                 // });
-                yield client.checks
-                    .create({
-                    owner: 'pqt',
-                    repo: 'nhl',
-                    name: '@nhl/goldenknights',
-                    head_sha: sha,
-                    output: {
-                        title: '@nhl/goldenknights',
-                        summary: 'One of the coolest NHL teams around.',
-                        annotations: [
-                            {
-                                path: '',
-                                start_line: 1,
-                                end_line: 1,
-                                annotation_level: 'notice',
-                                message: '',
-                            },
-                        ],
-                        images: [
-                            {
-                                alt: '',
-                                image_url: '',
-                            },
-                        ],
-                    },
-                    actions: [
+                (() => __awaiter(this, void 0, void 0, function* () {
+                    console.log(`Starting status checks for commit ${sha}`);
+                    yield Promise.all([
                         {
-                            label: '',
-                            description: '',
-                            identifier: '',
+                            name: 'My Check',
+                            callback: () => __awaiter(this, void 0, void 0, function* () { return 'Check passed!'; }),
                         },
-                    ],
-                })
-                    .catch((error) => console.log(JSON.stringify(error)));
+                    ].map((check) => __awaiter(this, void 0, void 0, function* () {
+                        const { name, callback } = check;
+                        yield node_fetch_1.default(`https://api.github.com/repos/pqt/nhl/statuses/${sha}`, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                state: 'pending',
+                                description: 'Running check..',
+                                context: name,
+                            }),
+                            headers: {
+                                Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                                'Content-Type': 'application/json',
+                            },
+                        });
+                        // await setStatus(statusCheckUrl, name, 'pending', 'Running check..');
+                        try {
+                            const response = yield callback();
+                            yield node_fetch_1.default(`https://api.github.com/repos/pqt/nhl/statuses/${sha}`, {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    state: 'success',
+                                    description: response,
+                                    context: name,
+                                }),
+                                headers: {
+                                    Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                                    'Content-Type': 'application/json',
+                                },
+                            });
+                            // await setStatus(statusCheckUrl, name, 'success', response);
+                        }
+                        catch (error) {
+                            const message = error ? error.message : 'Something went wrong';
+                            yield node_fetch_1.default(`https://api.github.com/repos/pqt/nhl/statuses/${sha}`, {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    state: 'success',
+                                    description: message,
+                                    context: name,
+                                }),
+                                headers: {
+                                    Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                                    'Content-Type': 'application/json',
+                                },
+                            });
+                        }
+                    })));
+                    console.log('Finished status checks');
+                }))();
+                // await client.checks
+                //   .create({
+                //     owner: 'pqt',
+                //     repo: 'nhl',
+                //     name: '@nhl/goldenknights',
+                //     head_sha: sha,
+                //     output: {
+                //       title: '@nhl/goldenknights',
+                //       summary: 'One of the coolest NHL teams around.',
+                //       annotations: [
+                //         {
+                //           path: '',
+                //           start_line: 1,
+                //           end_line: 1,
+                //           annotation_level: 'notice',
+                //           message: '',
+                //         },
+                //       ],
+                //       images: [
+                //         {
+                //           alt: '',
+                //           image_url: '',
+                //         },
+                //       ],
+                //     },
+                //     actions: [
+                //       {
+                //         label: '',
+                //         description: '',
+                //         identifier: '',
+                //       },
+                //     ],
+                //   })
+                //   .catch((error) => console.log(JSON.stringify(error)));
                 // async function setStatus(url: string, name: string, state: string, description: string) {
                 //   return fetch(url, {
                 //     method: 'POST',

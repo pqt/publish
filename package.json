@@ -16,11 +16,13 @@
   },
   "dependencies": {
     "@actions/core": "^1.2.6",
-    "@actions/github": "^4.0.0"
+    "@actions/github": "^4.0.0",
+    "node-fetch": "^2.6.1"
   },
   "devDependencies": {
     "@pqt/eslint-config": "^0.0.17",
     "@pqt/prettier-config": "^0.0.8",
+    "@types/node-fetch": "^2.5.7",
     "@vercel/ncc": "^0.25.1",
     "eslint": "^7.14.0",
     "husky": "^4.3.0",
