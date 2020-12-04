@@ -88,12 +88,12 @@ export async function run(): Promise<void> {
 
       console.log('Searching in', `${process.env.GITHUB_WORKSPACE}/${buildFolder}`);
 
-      const paths = await globby(`${process.env.GITHUB_WORKSPACE}/${buildFolder}`);
-      // const paths = await globby(`${process.env.GITHUB_WORKSPACE}/${buildFolder}`, {
-      //   expandDirectories: {
-      //     files: ['package.json'],
-      //   },
-      // });
+      // const paths = await globby(`${process.env.GITHUB_WORKSPACE}/${buildFolder}`);
+      const paths = await globby(`${process.env.GITHUB_WORKSPACE}/${buildFolder}`, {
+        expandDirectories: {
+          files: ['package.json'],
+        },
+      });
       console.log(paths);
 
       // const checks = [
