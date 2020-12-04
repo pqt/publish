@@ -100,8 +100,7 @@ function run() {
                     return;
                 }
                 const buildFolder = 'dist';
-                const paths = yield globby_1.default([process.env.GITHUB_WORKSPACE, buildFolder, 'package.json']);
-                yield globby_1.default(`${process.env.GITHUB_WORKSPACE}/${buildFolder}`, {
+                const paths = yield globby_1.default(`${process.env.GITHUB_WORKSPACE}/${buildFolder}`, {
                     expandDirectories: {
                         files: ['package.json'],
                     },
