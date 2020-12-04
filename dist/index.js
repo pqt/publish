@@ -109,38 +109,61 @@ function run() {
                 //     .replace('%title%', title)
                 // });
                 /* eslint-disable @typescript-eslint/camelcase */
-                console.log('Sharks');
-                yield client.checks.create({
-                    owner: 'pqt',
-                    repo: 'nhl',
-                    name: '@nhl/sharks',
-                    head_sha: sha,
-                    status: 'queued',
-                });
-                console.log('Pens');
-                yield client.checks.create({
-                    owner: 'pqt',
-                    repo: 'nhl',
-                    name: '@nhl/penguins',
-                    head_sha: sha,
-                    status: 'queued',
-                });
-                console.log('Kraken');
-                yield client.checks.create({
-                    owner: 'pqt',
-                    repo: 'nhl',
-                    name: '@nhl/kraken',
-                    head_sha: sha,
-                    status: 'queued',
-                });
-                console.log('Golden Knights');
-                yield client.checks.create({
+                // await client.checks.create({
+                //   owner: 'pqt',
+                //   repo: 'nhl',
+                //   name: '@nhl/sharks',
+                //   head_sha: sha,
+                //   status: 'queued',
+                // });
+                // await client.checks.create({
+                //   owner: 'pqt',
+                //   repo: 'nhl',
+                //   name: '@nhl/penguins',
+                //   head_sha: sha,
+                //   status: 'queued',
+                // });
+                // await client.checks.create({
+                //   owner: 'pqt',
+                //   repo: 'nhl',
+                //   name: '@nhl/kraken',
+                //   head_sha: sha,
+                //   status: 'queued',
+                // });
+                yield client.checks
+                    .create({
                     owner: 'pqt',
                     repo: 'nhl',
                     name: '@nhl/goldenknights',
                     head_sha: sha,
-                    status: 'queued',
-                });
+                    output: {
+                        title: '@nhl/goldenknights',
+                        summary: 'One of the coolest NHL teams around.',
+                        annotations: [
+                            {
+                                path: '',
+                                start_line: 1,
+                                end_line: 1,
+                                annotation_level: 'notice',
+                                message: '',
+                            },
+                        ],
+                        images: [
+                            {
+                                alt: '',
+                                image_url: '',
+                            },
+                        ],
+                    },
+                    actions: [
+                        {
+                            label: '',
+                            description: '',
+                            identifier: '',
+                        },
+                    ],
+                })
+                    .catch((error) => console.log(JSON.stringify(error)));
                 // async function setStatus(url: string, name: string, state: string, description: string) {
                 //   return fetch(url, {
                 //     method: 'POST',
