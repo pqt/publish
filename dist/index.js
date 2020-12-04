@@ -50,11 +50,6 @@ function run() {
              */
             const { eventName } = github_1.context;
             /**
-             * Destructure:
-             *  sha (the current sha associated with this action runner) that will help us create additional checks
-             */
-            const { after: sha } = github_1.context.payload;
-            /**
              * Status Check URL
              */
             // const statusCheckUrl = `https://api.github.com/repos/${context.payload.repository.full_name}/statuses/${sha}`;
@@ -138,7 +133,7 @@ function run() {
                 //   head_sha: sha,
                 //   status: 'queued',
                 // });
-                console.log(`Starting status checks for commit ${sha}`);
+                console.log(`Starting status checks for commit ${github_1.context.payload.after}`);
                 yield Promise.all([
                     {
                         name: 'My Check',
@@ -146,7 +141,7 @@ function run() {
                     },
                 ].map((check) => __awaiter(this, void 0, void 0, function* () {
                     const { name, callback } = check;
-                    yield node_fetch_1.default(`https://api.github.com/repos/pqt/nhl/statuses/${sha}`, {
+                    yield node_fetch_1.default(`https://api.github.com/repos/pqt/nhl/statuses/${github_1.context.payload.after}`, {
                         method: 'POST',
                         body: JSON.stringify({
                             state: 'pending',
@@ -154,14 +149,14 @@ function run() {
                             context: name,
                         }),
                         headers: {
-                            Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                            Authorization: `Bearer ${token}`,
                             'Content-Type': 'application/json',
                         },
                     });
                     // await setStatus(statusCheckUrl, name, 'pending', 'Running check..');
                     try {
                         const response = yield callback();
-                        yield node_fetch_1.default(`https://api.github.com/repos/pqt/nhl/statuses/${sha}`, {
+                        yield node_fetch_1.default(`https://api.github.com/repos/pqt/nhl/statuses/${github_1.context.payload.after}`, {
                             method: 'POST',
                             body: JSON.stringify({
                                 state: 'success',
@@ -169,7 +164,7 @@ function run() {
                                 context: name,
                             }),
                             headers: {
-                                Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                                Authorization: `Bearer ${token}`,
                                 'Content-Type': 'application/json',
                             },
                         });
@@ -177,7 +172,7 @@ function run() {
                     }
                     catch (error) {
                         const message = error ? error.message : 'Something went wrong';
-                        yield node_fetch_1.default(`https://api.github.com/repos/pqt/nhl/statuses/${sha}`, {
+                        yield node_fetch_1.default(`https://api.github.com/repos/pqt/nhl/statuses/${github_1.context.payload.after}`, {
                             method: 'POST',
                             body: JSON.stringify({
                                 state: 'success',
@@ -185,7 +180,7 @@ function run() {
                                 context: name,
                             }),
                             headers: {
-                                Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                                Authorization: `Bearer ${token}`,
                                 'Content-Type': 'application/json',
                             },
                         });

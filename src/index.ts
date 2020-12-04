@@ -30,12 +30,6 @@ export async function run(): Promise<void> {
     const { eventName } = context;
 
     /**
-     * Destructure:
-     *  sha (the current sha associated with this action runner) that will help us create additional checks
-     */
-    const { after: sha } = context.payload;
-
-    /**
      * Status Check URL
      */
     // const statusCheckUrl = `https://api.github.com/repos/${context.payload.repository.full_name}/statuses/${sha}`;
@@ -128,7 +122,7 @@ export async function run(): Promise<void> {
       //   status: 'queued',
       // });
 
-      console.log(`Starting status checks for commit ${sha}`);
+      console.log(`Starting status checks for commit ${context.payload.after}`);
       await Promise.all(
         [
           {
@@ -138,7 +132,7 @@ export async function run(): Promise<void> {
         ].map(async (check) => {
           const { name, callback } = check;
 
-          await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${sha}`, {
+          await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
             method: 'POST',
             body: JSON.stringify({
               state: 'pending',
@@ -146,7 +140,7 @@ export async function run(): Promise<void> {
               context: name,
             }),
             headers: {
-              Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+              Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
           });
@@ -156,7 +150,7 @@ export async function run(): Promise<void> {
           try {
             const response = await callback();
 
-            await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${sha}`, {
+            await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
               method: 'POST',
               body: JSON.stringify({
                 state: 'success',
@@ -164,7 +158,7 @@ export async function run(): Promise<void> {
                 context: name,
               }),
               headers: {
-                Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                Authorization: `Bearer ${token}`,
                 'Content-Type': 'application/json',
               },
             });
@@ -172,7 +166,7 @@ export async function run(): Promise<void> {
           } catch (error) {
             const message = error ? error.message : 'Something went wrong';
 
-            await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${sha}`, {
+            await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
               method: 'POST',
               body: JSON.stringify({
                 state: 'success',
@@ -180,7 +174,7 @@ export async function run(): Promise<void> {
                 context: name,
               }),
               headers: {
-                Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                Authorization: `Bearer ${token}`,
                 'Content-Type': 'application/json',
               },
             });
