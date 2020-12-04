@@ -1,5 +1,6 @@
 import { endGroup, getInput, setFailed, startGroup } from '@actions/core';
 import { context, getOctokit } from '@actions/github';
+import globby from 'globby';
 import fetch from 'node-fetch';
 
 /**
@@ -66,6 +67,11 @@ export async function run(): Promise<void> {
         setFailed('Could not find the pull_request context.');
         return;
       }
+
+      const distFolder = './dist/';
+
+      const paths = await globby([distFolder, '**', 'package.json']);
+      console.log(paths);
 
       // const checks = [
       //   {
