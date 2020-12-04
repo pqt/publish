@@ -20,22 +20,6 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.run = void 0;
 const core_1 = __webpack_require__(186);
 const github_1 = __webpack_require__(438);
-function setStatus(url, name, state, description) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return fetch(url, {
-            method: 'POST',
-            body: JSON.stringify({
-                state,
-                description,
-                context: name,
-            }),
-            headers: {
-                Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-                'Content-Type': 'application/json',
-            },
-        });
-    });
-}
 /**
  * The entrypoint for the GitHub Action
  */
@@ -65,7 +49,12 @@ function run() {
             /**
              * Status Check URL
              */
-            const statusCheckUrl = `https://api.github.com/repos/${github_1.context.payload.repository.full_name}/statuses/${sha}`;
+            // const statusCheckUrl = `https://api.github.com/repos/${context.payload.repository.full_name}/statuses/${sha}`;
+            /**
+             * Instantiate a GitHub Client instance
+             */
+            const token = core_1.getInput('GITHUB_TOKEN', { required: true });
+            const client = github_1.getOctokit(token);
             /**
              * Enforce we're not running the action on every push (unless it's on the default branch)
              */
@@ -92,41 +81,94 @@ function run() {
                     core_1.setFailed('Could not find the pull_request context.');
                     return;
                 }
-                const checks = [
-                    {
-                        name: '@nhl/sharks',
-                        callback: () => __awaiter(this, void 0, void 0, function* () { return 'Check passed!'; }),
-                    },
-                    {
-                        name: '@nhl/goldenknights',
-                        callback: () => __awaiter(this, void 0, void 0, function* () { return 'Check passed!'; }),
-                    },
-                    {
-                        name: '@nhl/kraken',
-                        callback: () => __awaiter(this, void 0, void 0, function* () { return 'Check passed!'; }),
-                    },
-                    {
-                        name: '@nhl/penguins',
-                        callback: () => __awaiter(this, void 0, void 0, function* () { return 'Check passed!'; }),
-                    },
-                ];
-                (() => __awaiter(this, void 0, void 0, function* () {
-                    console.log(`Starting status checks for commit ${sha}`);
-                    // Run in parallel
-                    yield Promise.all(checks.map((check) => __awaiter(this, void 0, void 0, function* () {
-                        const { name, callback } = check;
-                        yield setStatus(statusCheckUrl, name, 'pending', 'Running check..');
-                        try {
-                            const response = yield callback();
-                            yield setStatus(statusCheckUrl, name, 'success', response);
-                        }
-                        catch (error) {
-                            const message = error ? error.message : 'Something went wrong';
-                            yield setStatus(statusCheckUrl, name, 'failure', message);
-                        }
-                    })));
-                    console.log('Finished status checks');
-                }))();
+                // const checks = [
+                //   {
+                //     name: '@nhl/sharks',
+                //     callback: async () => 'Check passed!',
+                //   },
+                //   {
+                //     name: '@nhl/goldenknights',
+                //     callback: async () => 'Check passed!',
+                //   },
+                //   {
+                //     name: '@nhl/kraken',
+                //     callback: async () => 'Check passed!',
+                //   },
+                //   {
+                //     name: '@nhl/penguins',
+                //     callback: async () => 'Check passed!',
+                //   },
+                // ];
+                // client.pulls.update({
+                //   owner,
+                //   repo,
+                //   pull_number: number,
+                //   title: titleFormat
+                //     .replace('%prefix%', ticketPrefix)
+                //     .replace('%id%', id)
+                //     .replace('%title%', title)
+                // });
+                /* eslint-disable @typescript-eslint/camelcase */
+                client.checks.create({
+                    owner: 'pqt',
+                    repo: 'nhl',
+                    name: '@nhl/sharks',
+                    head_sha: sha,
+                    status: 'queued',
+                });
+                client.checks.create({
+                    owner: 'pqt',
+                    repo: 'nhl',
+                    name: '@nhl/penguins',
+                    head_sha: sha,
+                    status: 'queued',
+                });
+                client.checks.create({
+                    owner: 'pqt',
+                    repo: 'nhl',
+                    name: '@nhl/kraken',
+                    head_sha: sha,
+                    status: 'queued',
+                });
+                client.checks.create({
+                    owner: 'pqt',
+                    repo: 'nhl',
+                    name: '@nhl/goldenknights',
+                    head_sha: sha,
+                    status: 'queued',
+                });
+                // async function setStatus(url: string, name: string, state: string, description: string) {
+                //   return fetch(url, {
+                //     method: 'POST',
+                //     body: JSON.stringify({
+                //       state,
+                //       description,
+                //       context: name,
+                //     }),
+                //     headers: {
+                //       Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                //       'Content-Type': 'application/json',
+                //     },
+                //   });
+                // }
+                // (async () => {
+                //   console.log(`Starting status checks for commit ${sha}`);
+                //   // Run in parallel
+                //   await Promise.all(
+                //     checks.map(async (check) => {
+                //       const { name, callback } = check;
+                //       await setStatus(statusCheckUrl, name, 'pending', 'Running check..');
+                //       try {
+                //         const response = await callback();
+                //         await setStatus(statusCheckUrl, name, 'success', response);
+                //       } catch (error) {
+                //         const message = error ? error.message : 'Something went wrong';
+                //         await setStatus(statusCheckUrl, name, 'failure', message);
+                //       }
+                //     })
+                //   );
+                //   console.log('Finished status checks');
+                // })();
                 /**
                  * TODO:
                  *

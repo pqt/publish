@@ -1,20 +1,5 @@
-import { debug as log, setFailed, startGroup, endGroup } from '@actions/core';
+import { endGroup, getInput, setFailed, startGroup } from '@actions/core';
 import { context, getOctokit } from '@actions/github';
-
-async function setStatus(url: string, name: string, state: string, description: string) {
-  return fetch(url, {
-    method: 'POST',
-    body: JSON.stringify({
-      state,
-      description,
-      context: name,
-    }),
-    headers: {
-      Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-  });
-}
 
 /**
  * The entrypoint for the GitHub Action
@@ -47,7 +32,13 @@ export async function run(): Promise<void> {
     /**
      * Status Check URL
      */
-    const statusCheckUrl = `https://api.github.com/repos/${context.payload.repository.full_name}/statuses/${sha}`;
+    // const statusCheckUrl = `https://api.github.com/repos/${context.payload.repository.full_name}/statuses/${sha}`;
+
+    /**
+     * Instantiate a GitHub Client instance
+     */
+    const token = getInput('GITHUB_TOKEN', { required: true });
+    const client = getOctokit(token);
 
     /**
      * Enforce we're not running the action on every push (unless it's on the default branch)
@@ -76,47 +67,105 @@ export async function run(): Promise<void> {
         return;
       }
 
-      const checks = [
-        {
-          name: '@nhl/sharks',
-          callback: async () => 'Check passed!',
-        },
-        {
-          name: '@nhl/goldenknights',
-          callback: async () => 'Check passed!',
-        },
-        {
-          name: '@nhl/kraken',
-          callback: async () => 'Check passed!',
-        },
-        {
-          name: '@nhl/penguins',
-          callback: async () => 'Check passed!',
-        },
-      ];
+      // const checks = [
+      //   {
+      //     name: '@nhl/sharks',
+      //     callback: async () => 'Check passed!',
+      //   },
+      //   {
+      //     name: '@nhl/goldenknights',
+      //     callback: async () => 'Check passed!',
+      //   },
+      //   {
+      //     name: '@nhl/kraken',
+      //     callback: async () => 'Check passed!',
+      //   },
+      //   {
+      //     name: '@nhl/penguins',
+      //     callback: async () => 'Check passed!',
+      //   },
+      // ];
 
-      (async () => {
-        console.log(`Starting status checks for commit ${sha}`);
+      // client.pulls.update({
+      //   owner,
+      //   repo,
+      //   pull_number: number,
+      //   title: titleFormat
+      //     .replace('%prefix%', ticketPrefix)
+      //     .replace('%id%', id)
+      //     .replace('%title%', title)
+      // });
 
-        // Run in parallel
-        await Promise.all(
-          checks.map(async (check) => {
-            const { name, callback } = check;
+      /* eslint-disable @typescript-eslint/camelcase */
 
-            await setStatus(statusCheckUrl, name, 'pending', 'Running check..');
+      client.checks.create({
+        owner: 'pqt',
+        repo: 'nhl',
+        name: '@nhl/sharks',
+        head_sha: sha,
+        status: 'queued',
+      });
 
-            try {
-              const response = await callback();
-              await setStatus(statusCheckUrl, name, 'success', response);
-            } catch (error) {
-              const message = error ? error.message : 'Something went wrong';
-              await setStatus(statusCheckUrl, name, 'failure', message);
-            }
-          })
-        );
+      client.checks.create({
+        owner: 'pqt',
+        repo: 'nhl',
+        name: '@nhl/penguins',
+        head_sha: sha,
+        status: 'queued',
+      });
 
-        console.log('Finished status checks');
-      })();
+      client.checks.create({
+        owner: 'pqt',
+        repo: 'nhl',
+        name: '@nhl/kraken',
+        head_sha: sha,
+        status: 'queued',
+      });
+
+      client.checks.create({
+        owner: 'pqt',
+        repo: 'nhl',
+        name: '@nhl/goldenknights',
+        head_sha: sha,
+        status: 'queued',
+      });
+
+      // async function setStatus(url: string, name: string, state: string, description: string) {
+      //   return fetch(url, {
+      //     method: 'POST',
+      //     body: JSON.stringify({
+      //       state,
+      //       description,
+      //       context: name,
+      //     }),
+      //     headers: {
+      //       Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+      //       'Content-Type': 'application/json',
+      //     },
+      //   });
+      // }
+      // (async () => {
+      //   console.log(`Starting status checks for commit ${sha}`);
+
+      //   // Run in parallel
+      //   await Promise.all(
+      //     checks.map(async (check) => {
+      //       const { name, callback } = check;
+
+      //       await setStatus(statusCheckUrl, name, 'pending', 'Running check..');
+
+      //       try {
+      //         const response = await callback();
+      //         await setStatus(statusCheckUrl, name, 'success', response);
+      //       } catch (error) {
+      //         const message = error ? error.message : 'Something went wrong';
+      //         await setStatus(statusCheckUrl, name, 'failure', message);
+      //       }
+      //     })
+      //   );
+
+      //   console.log('Finished status checks');
+      // })();
 
       /**
        * TODO:
