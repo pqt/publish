@@ -26,9 +26,14 @@ export async function run(): Promise<void> {
     /**
      * Destructure:
      *  eventName (determines if the trigger type is "push" or "pull_request")
+     */
+    const { eventName } = context;
+
+    /**
+     * Destructure:
      *  sha (the current sha associated with this action runner) that will help us create additional checks
      */
-    const { eventName, sha } = context;
+    const { after: sha } = context.payload;
 
     /**
      * Status Check URL

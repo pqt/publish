@@ -47,9 +47,13 @@ function run() {
             /**
              * Destructure:
              *  eventName (determines if the trigger type is "push" or "pull_request")
+             */
+            const { eventName } = github_1.context;
+            /**
+             * Destructure:
              *  sha (the current sha associated with this action runner) that will help us create additional checks
              */
-            const { eventName, sha } = github_1.context;
+            const { after: sha } = github_1.context.payload;
             /**
              * Status Check URL
              */
