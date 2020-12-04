@@ -24,9 +24,12 @@ const github_1 = __webpack_require__(438);
  * The entrypoint for the GitHub Action
  */
 function run() {
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             console.log(JSON.stringify(github_1.context));
+            const currentBranch = (_a = github_1.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.head.ref;
+            const defaultBranch = (_b = github_1.context.payload.pull_request) === null || _b === void 0 ? void 0 : _b.head.ref;
             core_1.setFailed('Failed just cause');
         }
         catch (error) {
