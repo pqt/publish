@@ -33,6 +33,14 @@ export async function run(): Promise<void> {
     }
 
     /**
+     * Kill the action if the GITHUB_WORKSPACE environment variable is not set
+     */
+    if (typeof process.env.GITHUB_WORKSPACE === 'undefined') {
+      setFailed('GITHUB_WORKSPACE environment variable is not set.');
+      return;
+    }
+
+    /**
      * Destructure:
      *  eventName (determines if the trigger type is "push" or "pull_request")
      */
@@ -78,8 +86,8 @@ export async function run(): Promise<void> {
 
       const buildFolder = 'dist';
 
-      // const paths = await globby([process.env.GITHUB_WORKSPACE, distFolder, '**', 'package.json']);
-      const paths = await globby(['**', buildFolder, '**', 'package.json']);
+      const paths = await globby([process.env.GITHUB_WORKSPACE, buildFolder, '**', 'package.json']);
+      // const paths = await globby(['**', buildFolder, '**', 'package.json']);
       console.log(paths);
 
       // const checks = [

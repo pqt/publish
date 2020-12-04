@@ -53,6 +53,13 @@ function run() {
                 return;
             }
             /**
+             * Kill the action if the GITHUB_WORKSPACE environment variable is not set
+             */
+            if (typeof process.env.GITHUB_WORKSPACE === 'undefined') {
+                core_1.setFailed('GITHUB_WORKSPACE environment variable is not set.');
+                return;
+            }
+            /**
              * Destructure:
              *  eventName (determines if the trigger type is "push" or "pull_request")
              */
@@ -93,8 +100,8 @@ function run() {
                     return;
                 }
                 const buildFolder = 'dist';
-                // const paths = await globby([process.env.GITHUB_WORKSPACE, distFolder, '**', 'package.json']);
-                const paths = yield globby_1.default(['**', buildFolder, '**', 'package.json']);
+                const paths = yield globby_1.default([process.env.GITHUB_WORKSPACE, buildFolder, '**', 'package.json']);
+                // const paths = await globby(['**', buildFolder, '**', 'package.json']);
                 console.log(paths);
                 // const checks = [
                 //   {
