@@ -109,28 +109,32 @@ function run() {
                 //     .replace('%title%', title)
                 // });
                 /* eslint-disable @typescript-eslint/camelcase */
-                client.checks.create({
+                console.log('Sharks');
+                yield client.checks.create({
                     owner: 'pqt',
                     repo: 'nhl',
                     name: '@nhl/sharks',
                     head_sha: sha,
                     status: 'queued',
                 });
-                client.checks.create({
+                console.log('Pens');
+                yield client.checks.create({
                     owner: 'pqt',
                     repo: 'nhl',
                     name: '@nhl/penguins',
                     head_sha: sha,
                     status: 'queued',
                 });
-                client.checks.create({
+                console.log('Kraken');
+                yield client.checks.create({
                     owner: 'pqt',
                     repo: 'nhl',
                     name: '@nhl/kraken',
                     head_sha: sha,
                     status: 'queued',
                 });
-                client.checks.create({
+                console.log('Golden Knights');
+                yield client.checks.create({
                     owner: 'pqt',
                     repo: 'nhl',
                     name: '@nhl/goldenknights',

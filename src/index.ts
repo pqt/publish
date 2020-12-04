@@ -98,7 +98,8 @@ export async function run(): Promise<void> {
 
       /* eslint-disable @typescript-eslint/camelcase */
 
-      client.checks.create({
+      console.log('Sharks');
+      await client.checks.create({
         owner: 'pqt',
         repo: 'nhl',
         name: '@nhl/sharks',
@@ -106,7 +107,8 @@ export async function run(): Promise<void> {
         status: 'queued',
       });
 
-      client.checks.create({
+      console.log('Pens');
+      await client.checks.create({
         owner: 'pqt',
         repo: 'nhl',
         name: '@nhl/penguins',
@@ -114,7 +116,8 @@ export async function run(): Promise<void> {
         status: 'queued',
       });
 
-      client.checks.create({
+      console.log('Kraken');
+      await client.checks.create({
         owner: 'pqt',
         repo: 'nhl',
         name: '@nhl/kraken',
@@ -122,7 +125,8 @@ export async function run(): Promise<void> {
         status: 'queued',
       });
 
-      client.checks.create({
+      console.log('Golden Knights');
+      await client.checks.create({
         owner: 'pqt',
         repo: 'nhl',
         name: '@nhl/goldenknights',
