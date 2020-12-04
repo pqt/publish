@@ -20,46 +20,152 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.run = void 0;
 const core_1 = __webpack_require__(186);
 const github_1 = __webpack_require__(438);
+function setStatus(url, name, state, description) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return fetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+                state,
+                description,
+                context: name,
+            }),
+            headers: {
+                Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+                'Content-Type': 'application/json',
+            },
+        });
+    });
+}
 /**
  * The entrypoint for the GitHub Action
  */
 function run() {
-    var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            let releaseCandidate = false;
             /**
-             * Full Context Debugger (Just for now)
+             * Log the full context for debugging purposes
+             * TODO: Move to debugging ONLY before production
              */
             core_1.startGroup('[REMOVE] Full Context Object');
             console.log(JSON.stringify(github_1.context));
             core_1.endGroup();
             /**
+             * Kill the action if we can't find a repository in the payload
+             */
+            if (typeof github_1.context.payload.repository === 'undefined') {
+                core_1.setFailed('Could not find the repository context.');
+                return;
+            }
+            /**
+             * Destructure:
+             *  eventName (determines if the trigger type is "push" or "pull_request")
+             *  sha (the current sha associated with this action runner) that will help us create additional checks
+             */
+            const { eventName, sha } = github_1.context;
+            /**
+             * Status Check URL
+             */
+            const statusCheckUrl = `https://api.github.com/repos/${github_1.context.payload.repository.full_name}/statuses/${sha}`;
+            /**
+             * Enforce we're not running the action on every push (unless it's on the default branch)
+             */
+            if (eventName === 'push') {
+                if (github_1.context.ref.replace('refs/heads/', '') !== github_1.context.payload.repository.default_branch) {
+                    console.log('Action does not need to trigger on a push to any branches other than the default');
+                    return;
+                }
+                /**
+                 * WE'RE IN THE MAIN BRANCH
+                 * TODO:
+                 *
+                 *  - Check that the version in the package.json manifest is different from what's published on NPM
+                 *  - If it is, published a new library, if not then exit (successfully?)
+                 *  - Tag as the latest release on the GitHub Repository
+                 *  - v<version>
+                 */
+            }
+            else if (eventName === 'pull_request') {
+                /**
+                 * If the event type is a pull request we need to make sure that payload context exists
+                 */
+                if (typeof github_1.context.payload.pull_request === 'undefined') {
+                    core_1.setFailed('Could not find the pull_request context.');
+                    return;
+                }
+                const checks = [
+                    {
+                        name: '@nhl/sharks',
+                        callback: () => __awaiter(this, void 0, void 0, function* () { return 'Check passed!'; }),
+                    },
+                    {
+                        name: '@nhl/goldenknights',
+                        callback: () => __awaiter(this, void 0, void 0, function* () { return 'Check passed!'; }),
+                    },
+                    {
+                        name: '@nhl/kraken',
+                        callback: () => __awaiter(this, void 0, void 0, function* () { return 'Check passed!'; }),
+                    },
+                    {
+                        name: '@nhl/penguins',
+                        callback: () => __awaiter(this, void 0, void 0, function* () { return 'Check passed!'; }),
+                    },
+                ];
+                (() => __awaiter(this, void 0, void 0, function* () {
+                    console.log(`Starting status checks for commit ${sha}`);
+                    // Run in parallel
+                    yield Promise.all(checks.map((check) => __awaiter(this, void 0, void 0, function* () {
+                        const { name, callback } = check;
+                        yield setStatus(statusCheckUrl, name, 'pending', 'Running check..');
+                        try {
+                            const response = yield callback();
+                            yield setStatus(statusCheckUrl, name, 'success', response);
+                        }
+                        catch (error) {
+                            const message = error ? error.message : 'Something went wrong';
+                            yield setStatus(statusCheckUrl, name, 'failure', message);
+                        }
+                    })));
+                    console.log('Finished status checks');
+                }))();
+                /**
+                 * TODO:
+                 *
+                 * - If we're in a release branch publish to NPM as a release candidate package, publish to the `next` npm dist tag
+                 * - <version>-rc.<sha>
+                 */
+            }
+            /**
+             * TODO:
+             *
+             * - Add an optional flag to (maybe) fallback to publishing a canary package.
+             * - 0.0.0-<sha>
+             */
+            /**
              * The current HEAD (source) branch for the PR
              */
-            const currentBranch = (_a = github_1.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.head.ref;
+            // const currentBranch: string = context.payload.pull_request.head.ref;
             /**
              * The target BASE branch for the PR
              */
-            const targetBranch = (_b = github_1.context.payload.pull_request) === null || _b === void 0 ? void 0 : _b.base.ref;
+            // const targetBranch: string = context.payload.pull_request.base.ref;
             /**
              * The main DEFAULT branch for the codebase
              */
-            const defaultBranch = (_c = github_1.context.payload.repository) === null || _c === void 0 ? void 0 : _c.default_branch;
+            // const defaultBranch: string = context.payload.repository.default_branch;
             /**
              * If the target branch matches the repository default.
              * Should that be the case, we're tagging it as a release candidate
              */
-            if (targetBranch === defaultBranch) {
-                releaseCandidate = true;
-                core_1.startGroup('[REMOVE] Full Context Object');
-                console.log(`[RELEASE CANDIDATE]:`, true);
-                core_1.endGroup();
-            }
-            core_1.setFailed('Failed just cause');
+            // if (targetBranch === defaultBranch) {
+            //   // releaseCandidate = true;
+            //   startGroup('[REMOVE] Full Context Object');
+            //   console.log(`[RELEASE CANDIDATE]:`, true);
+            //   endGroup();
+            // }
+            throw 'Throw works!';
+            // setFailed('Failed just cause');
         }
         catch (error) {
-            console.log('Error');
             core_1.setFailed(error);
         }
     });
