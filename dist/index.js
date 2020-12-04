@@ -24,12 +24,38 @@ const github_1 = __webpack_require__(438);
  * The entrypoint for the GitHub Action
  */
 function run() {
-    var _a, _b;
+    var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function* () {
         try {
+            let releaseCandidate = false;
+            /**
+             * Full Context Debugger (Just for now)
+             */
+            core_1.startGroup('[REMOVE] Full Context Object');
             console.log(JSON.stringify(github_1.context));
+            core_1.endGroup();
+            /**
+             * The current HEAD (source) branch for the PR
+             */
             const currentBranch = (_a = github_1.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.head.ref;
-            const defaultBranch = (_b = github_1.context.payload.pull_request) === null || _b === void 0 ? void 0 : _b.head.ref;
+            /**
+             * The target BASE branch for the PR
+             */
+            const targetBranch = (_b = github_1.context.payload.pull_request) === null || _b === void 0 ? void 0 : _b.base.ref;
+            /**
+             * The main DEFAULT branch for the codebase
+             */
+            const defaultBranch = (_c = github_1.context.payload.repository) === null || _c === void 0 ? void 0 : _c.default_branch;
+            /**
+             * If the target branch matches the repository default.
+             * Should that be the case, we're tagging it as a release candidate
+             */
+            if (targetBranch === defaultBranch) {
+                releaseCandidate = true;
+                core_1.startGroup('[REMOVE] Full Context Object');
+                console.log(`[RELEASE CANDIDATE]:`, true);
+                core_1.endGroup();
+            }
             core_1.setFailed('Failed just cause');
         }
         catch (error) {
