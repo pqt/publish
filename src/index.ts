@@ -1,8 +1,9 @@
 import { endGroup, getInput, setFailed, startGroup } from '@actions/core';
 import { context, getOctokit } from '@actions/github';
 import globby from 'globby';
-import fetch from 'node-fetch';
 import { readManifest } from './utils/read-manifest';
+import * as ezSpawn from '@jsdevtools/ez-spawn';
+import { SemVer } from 'semver';
 
 /**
  * The entrypoint for the GitHub Action
@@ -119,6 +120,29 @@ export async function run(): Promise<void> {
           });
 
           try {
+            const { stdout, stderr } = await ezSpawn.async(['npm', 'view', name, 'version']);
+
+            // If the package was not previously published, return version 0.0.0.
+            if (stderr && stderr.includes('E404')) {
+              // options.debug(`The latest version of ${name} is at v0.0.0, as it was never published.`);
+              // return new SemVer('0.0.0');
+              throw new Error('Package is not published');
+            }
+
+            /**
+             * The latest version published on NPM
+             */
+            const currentNpmVersionString = stdout.trim();
+
+            /**
+             * Parse/validate the version number
+             */
+            const currentNpmVersion = new SemVer(currentNpmVersionString);
+
+            if (currentNpmVersion === version) {
+              throw new Error(`${version.version} is already published`);
+            }
+
             await client.repos.createCommitStatus({
               owner,
               repo,
