@@ -110,15 +110,44 @@ export async function run(): Promise<void> {
             method: 'POST',
             body: JSON.stringify({
               state: 'pending',
-              // description: 'Running check..',
-              description: version.version,
-              context: name,
+              description: 'Running check...',
+              context: `Publish ${name} v${version.version}`,
             }),
             headers: {
               Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
           });
+          try {
+            await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
+              method: 'POST',
+              body: JSON.stringify({
+                state: 'success',
+                description: 'Check passed!',
+                context: `Publish ${name} v${version.version}`,
+              }),
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+            // await setStatus(statusCheckUrl, name, 'success', response);
+          } catch (error) {
+            const message = error ? error.message : 'Something went wrong';
+
+            await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
+              method: 'POST',
+              body: JSON.stringify({
+                state: 'success',
+                description: message,
+                context: `Publish ${name} v${version.version}`,
+              }),
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+          }
         })
       );
 

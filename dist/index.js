@@ -120,15 +120,44 @@ function run() {
                         method: 'POST',
                         body: JSON.stringify({
                             state: 'pending',
-                            // description: 'Running check..',
-                            description: version.version,
-                            context: name,
+                            description: 'Running check...',
+                            context: `Publish ${name} v${version.version}`,
                         }),
                         headers: {
                             Authorization: `Bearer ${token}`,
                             'Content-Type': 'application/json',
                         },
                     });
+                    try {
+                        yield node_fetch_1.default(`https://api.github.com/repos/pqt/nhl/statuses/${github_1.context.payload.after}`, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                state: 'success',
+                                description: 'Check passed!',
+                                context: `Publish ${name} v${version.version}`,
+                            }),
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                                'Content-Type': 'application/json',
+                            },
+                        });
+                        // await setStatus(statusCheckUrl, name, 'success', response);
+                    }
+                    catch (error) {
+                        const message = error ? error.message : 'Something went wrong';
+                        yield node_fetch_1.default(`https://api.github.com/repos/pqt/nhl/statuses/${github_1.context.payload.after}`, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                state: 'success',
+                                description: message,
+                                context: `Publish ${name} v${version.version}`,
+                            }),
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                                'Content-Type': 'application/json',
+                            },
+                        });
+                    }
                 })));
                 // const checks = [
                 //   {
