@@ -106,46 +106,55 @@ export async function run(): Promise<void> {
           const { name, version } = await readManifest(manifest);
           // console.log(name, version);
 
-          await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
-            method: 'POST',
-            body: JSON.stringify({
-              state: 'pending',
-              description: 'Running check...',
-              context: `Publish ${name} v${version.version}`,
-            }),
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
+          await client.repos.createCommitStatus({
+            owner: 'pqt',
+            repo: 'nhl',
+            state: 'pending',
+            sha: context.payload.after,
+            context: `Publish ${name} v${version.version}`,
+            description: 'Running check...',
           });
+
+          // await client.checks.create({
+          //   owner: 'pqt',
+          //   repo: 'nhl',
+          //   name: `Publish ${name} v${version.version}`,
+          //   head_sha: context.payload.after,
+          // });
+
+          // await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
+          //   method: 'POST',
+          //   body: JSON.stringify({
+          //     state: 'pending',
+          //     description: 'Running check...',
+          //     context: `Publish ${name} v${version.version}`,
+          //   }),
+          //   headers: {
+          //     Authorization: `Bearer ${token}`,
+          //     'Content-Type': 'application/json',
+          //   },
+          // });
+
           try {
-            await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
-              method: 'POST',
-              body: JSON.stringify({
-                state: 'success',
-                description: 'Check passed!',
-                context: `Publish ${name} v${version.version}`,
-              }),
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
+            await client.repos.createCommitStatus({
+              owner: 'pqt',
+              repo: 'nhl',
+              state: 'success',
+              sha: context.payload.after,
+              context: `Publish ${name} v${version.version}`,
+              description: 'Check passed!',
             });
             // await setStatus(statusCheckUrl, name, 'success', response);
           } catch (error) {
             const message = error ? error.message : 'Something went wrong';
 
-            await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
-              method: 'POST',
-              body: JSON.stringify({
-                state: 'success',
-                description: message,
-                context: `Publish ${name} v${version.version}`,
-              }),
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
+            await client.repos.createCommitStatus({
+              owner: 'pqt',
+              repo: 'nhl',
+              state: 'error',
+              sha: context.payload.after,
+              context: `Publish ${name} v${version.version}`,
+              description: 'Check failed',
             });
           }
         })
@@ -206,67 +215,67 @@ export async function run(): Promise<void> {
       //   status: 'queued',
       // });
 
-      console.log(`Starting status checks for commit ${context.payload.after}`);
-      await Promise.all(
-        [
-          {
-            name: 'My Check',
-            callback: async () => 'Check passed!',
-          },
-        ].map(async (check) => {
-          const { name, callback } = check;
+      // console.log(`Starting status checks for commit ${context.payload.after}`);
+      // await Promise.all(
+      //   [
+      //     {
+      //       name: 'My Check',
+      //       callback: async () => 'Check passed!',
+      //     },
+      //   ].map(async (check) => {
+      //     const { name, callback } = check;
 
-          await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
-            method: 'POST',
-            body: JSON.stringify({
-              state: 'pending',
-              description: 'Running check..',
-              context: name,
-            }),
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
+      //     await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
+      //       method: 'POST',
+      //       body: JSON.stringify({
+      //         state: 'pending',
+      //         description: 'Running check..',
+      //         context: name,
+      //       }),
+      //       headers: {
+      //         Authorization: `Bearer ${token}`,
+      //         'Content-Type': 'application/json',
+      //       },
+      //     });
 
-          // await setStatus(statusCheckUrl, name, 'pending', 'Running check..');
+      //     // await setStatus(statusCheckUrl, name, 'pending', 'Running check..');
 
-          try {
-            const response = await callback();
+      //     try {
+      //       const response = await callback();
 
-            await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
-              method: 'POST',
-              body: JSON.stringify({
-                state: 'success',
-                description: response,
-                context: name,
-              }),
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
-            });
-            // await setStatus(statusCheckUrl, name, 'success', response);
-          } catch (error) {
-            const message = error ? error.message : 'Something went wrong';
+      //       await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
+      //         method: 'POST',
+      //         body: JSON.stringify({
+      //           state: 'success',
+      //           description: response,
+      //           context: name,
+      //         }),
+      //         headers: {
+      //           Authorization: `Bearer ${token}`,
+      //           'Content-Type': 'application/json',
+      //         },
+      //       });
+      //       // await setStatus(statusCheckUrl, name, 'success', response);
+      //     } catch (error) {
+      //       const message = error ? error.message : 'Something went wrong';
 
-            await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
-              method: 'POST',
-              body: JSON.stringify({
-                state: 'success',
-                description: message,
-                context: name,
-              }),
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-              },
-            });
-          }
-        })
-      );
+      //       await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
+      //         method: 'POST',
+      //         body: JSON.stringify({
+      //           state: 'success',
+      //           description: message,
+      //           context: name,
+      //         }),
+      //         headers: {
+      //           Authorization: `Bearer ${token}`,
+      //           'Content-Type': 'application/json',
+      //         },
+      //       });
+      //     }
+      //   })
+      // );
 
-      console.log('Finished status checks');
+      // console.log('Finished status checks');
 
       // await client.checks
       //   .create({
