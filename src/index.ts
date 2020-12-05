@@ -122,6 +122,9 @@ export async function run(): Promise<void> {
           try {
             const { stdout, stderr } = await ezSpawn.async(['npm', 'view', name, 'version']);
 
+            console.log(stdout);
+            console.log(stderr);
+
             // If the package was not previously published, return version 0.0.0.
             if (stderr && stderr.includes('E404')) {
               // options.debug(`The latest version of ${name} is at v0.0.0, as it was never published.`);
