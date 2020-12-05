@@ -32,6 +32,10 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             /**
+             * Potential Future Inputs
+             */
+            const buildFolder = 'dist';
+            /**
              * Log the full context for debugging purposes
              * TODO: Move to debugging ONLY before production
              */
@@ -99,22 +103,15 @@ function run() {
                     core_1.setFailed('Could not find the pull_request context.');
                     return;
                 }
-                const buildFolder = 'dist';
                 console.log('Searching in', `${process.env.GITHUB_WORKSPACE}/${buildFolder}`);
                 // const paths = await globby(`${process.env.GITHUB_WORKSPACE}/${buildFolder}`);
-                const paths = yield globby_1.default(`${process.env.GITHUB_WORKSPACE}/${buildFolder}`, {
+                const packageManifests = yield globby_1.default(`${process.env.GITHUB_WORKSPACE}/${buildFolder}`, {
                     expandDirectories: {
                         files: ['package.json'],
                     },
                 });
-                // console.log(paths);
-                // paths.forEach(async (manifest) => {
-                //   const { name, version } = await readManifest(manifest);
-                //   console.log(name, version);
-                // });
-                yield Promise.all(paths.map((manifest) => __awaiter(this, void 0, void 0, function* () {
+                yield Promise.all(packageManifests.map((manifest) => __awaiter(this, void 0, void 0, function* () {
                     const { name, version } = yield read_manifest_1.readManifest(manifest);
-                    // console.log(name, version);
                     yield client.repos.createCommitStatus({
                         owner: 'pqt',
                         repo: 'nhl',
@@ -123,34 +120,16 @@ function run() {
                         context: `Publish ${name} v${version.version}`,
                         description: 'Running check...',
                     });
-                    // await client.checks.create({
-                    //   owner: 'pqt',
-                    //   repo: 'nhl',
-                    //   name: `Publish ${name} v${version.version}`,
-                    //   head_sha: context.payload.after,
-                    // });
-                    // await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
-                    //   method: 'POST',
-                    //   body: JSON.stringify({
-                    //     state: 'pending',
-                    //     description: 'Running check...',
-                    //     context: `Publish ${name} v${version.version}`,
-                    //   }),
-                    //   headers: {
-                    //     Authorization: `Bearer ${token}`,
-                    //     'Content-Type': 'application/json',
-                    //   },
-                    // });
                     try {
-                        yield client.repos.createCommitStatus({
-                            owner: 'pqt',
-                            repo: 'nhl',
-                            state: 'success',
-                            sha: github_1.context.payload.after,
-                            context: `Publish ${name} v${version.version}`,
-                            description: 'Check passed!',
-                        });
-                        // await setStatus(statusCheckUrl, name, 'success', response);
+                        throw new Error('Something went wrong');
+                        // await client.repos.createCommitStatus({
+                        //   owner: 'pqt',
+                        //   repo: 'nhl',
+                        //   state: 'success',
+                        //   sha: context.payload.after,
+                        //   context: `Publish ${name} v${version.version}`,
+                        //   description: 'Check passed!',
+                        // });
                     }
                     catch (error) {
                         const message = error ? error.message : 'Something went wrong';
@@ -160,180 +139,10 @@ function run() {
                             state: 'error',
                             sha: github_1.context.payload.after,
                             context: `Publish ${name} v${version.version}`,
-                            description: 'Check failed',
+                            description: message,
                         });
                     }
                 })));
-                // const checks = [
-                //   {
-                //     name: '@nhl/sharks',
-                //     callback: async () => 'Check passed!',
-                //   },
-                //   {
-                //     name: '@nhl/goldenknights',
-                //     callback: async () => 'Check passed!',
-                //   },
-                //   {
-                //     name: '@nhl/kraken',
-                //     callback: async () => 'Check passed!',
-                //   },
-                //   {
-                //     name: '@nhl/penguins',
-                //     callback: async () => 'Check passed!',
-                //   },
-                // ];
-                // client.pulls.update({
-                //   owner,
-                //   repo,
-                //   pull_number: number,
-                //   title: titleFormat
-                //     .replace('%prefix%', ticketPrefix)
-                //     .replace('%id%', id)
-                //     .replace('%title%', title)
-                // });
-                /* eslint-disable @typescript-eslint/camelcase */
-                // await client.checks.create({
-                //   owner: 'pqt',
-                //   repo: 'nhl',
-                //   name: '@nhl/sharks',
-                //   head_sha: sha,
-                //   status: 'queued',
-                // });
-                // await client.checks.create({
-                //   owner: 'pqt',
-                //   repo: 'nhl',
-                //   name: '@nhl/penguins',
-                //   head_sha: sha,
-                //   status: 'queued',
-                // });
-                // await client.checks.create({
-                //   owner: 'pqt',
-                //   repo: 'nhl',
-                //   name: '@nhl/kraken',
-                //   head_sha: sha,
-                //   status: 'queued',
-                // });
-                // console.log(`Starting status checks for commit ${context.payload.after}`);
-                // await Promise.all(
-                //   [
-                //     {
-                //       name: 'My Check',
-                //       callback: async () => 'Check passed!',
-                //     },
-                //   ].map(async (check) => {
-                //     const { name, callback } = check;
-                //     await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
-                //       method: 'POST',
-                //       body: JSON.stringify({
-                //         state: 'pending',
-                //         description: 'Running check..',
-                //         context: name,
-                //       }),
-                //       headers: {
-                //         Authorization: `Bearer ${token}`,
-                //         'Content-Type': 'application/json',
-                //       },
-                //     });
-                //     // await setStatus(statusCheckUrl, name, 'pending', 'Running check..');
-                //     try {
-                //       const response = await callback();
-                //       await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
-                //         method: 'POST',
-                //         body: JSON.stringify({
-                //           state: 'success',
-                //           description: response,
-                //           context: name,
-                //         }),
-                //         headers: {
-                //           Authorization: `Bearer ${token}`,
-                //           'Content-Type': 'application/json',
-                //         },
-                //       });
-                //       // await setStatus(statusCheckUrl, name, 'success', response);
-                //     } catch (error) {
-                //       const message = error ? error.message : 'Something went wrong';
-                //       await fetch(`https://api.github.com/repos/pqt/nhl/statuses/${context.payload.after}`, {
-                //         method: 'POST',
-                //         body: JSON.stringify({
-                //           state: 'success',
-                //           description: message,
-                //           context: name,
-                //         }),
-                //         headers: {
-                //           Authorization: `Bearer ${token}`,
-                //           'Content-Type': 'application/json',
-                //         },
-                //       });
-                //     }
-                //   })
-                // );
-                // console.log('Finished status checks');
-                // await client.checks
-                //   .create({
-                //     owner: 'pqt',
-                //     repo: 'nhl',
-                //     name: '@nhl/goldenknights',
-                //     head_sha: sha,
-                //     output: {
-                //       title: '@nhl/goldenknights',
-                //       summary: 'One of the coolest NHL teams around.',
-                //       annotations: [
-                //         {
-                //           path: '',
-                //           start_line: 1,
-                //           end_line: 1,
-                //           annotation_level: 'notice',
-                //           message: '',
-                //         },
-                //       ],
-                //       images: [
-                //         {
-                //           alt: '',
-                //           image_url: '',
-                //         },
-                //       ],
-                //     },
-                //     actions: [
-                //       {
-                //         label: '',
-                //         description: '',
-                //         identifier: '',
-                //       },
-                //     ],
-                //   })
-                //   .catch((error) => console.log(JSON.stringify(error)));
-                // async function setStatus(url: string, name: string, state: string, description: string) {
-                //   return fetch(url, {
-                //     method: 'POST',
-                //     body: JSON.stringify({
-                //       state,
-                //       description,
-                //       context: name,
-                //     }),
-                //     headers: {
-                //       Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-                //       'Content-Type': 'application/json',
-                //     },
-                //   });
-                // }
-                // (async () => {
-                //   console.log(`Starting status checks for commit ${sha}`);
-                //   // Run in parallel
-                //   await Promise.all(
-                //     checks.map(async (check) => {
-                //       const { name, callback } = check;
-                //       await setStatus(statusCheckUrl, name, 'pending', 'Running check..');
-                //       try {
-                //         const response = await callback();
-                //         await setStatus(statusCheckUrl, name, 'success', response);
-                //       } catch (error) {
-                //         const message = error ? error.message : 'Something went wrong';
-                //         await setStatus(statusCheckUrl, name, 'failure', message);
-                //       }
-                //     })
-                //   );
-                //   console.log('Finished status checks');
-                // })();
                 /**
                  * TODO:
                  *
