@@ -39,6 +39,13 @@ export async function run(): Promise<void> {
     }
 
     /**
+     * Shorthand aliases for commonly required payload values
+     */
+    const repo = context.payload.repository.name;
+    const owner = context.payload.repository.owner.login;
+    const sha = context.payload.after;
+
+    /**
      * Kill the action if the GITHUB_WORKSPACE environment variable is not set
      */
     if (typeof process.env.GITHUB_WORKSPACE === 'undefined') {
@@ -103,32 +110,31 @@ export async function run(): Promise<void> {
           const { name, version } = await readManifest(manifest);
 
           await client.repos.createCommitStatus({
-            owner: 'pqt',
-            repo: 'nhl',
+            owner,
+            repo,
+            sha,
             state: 'pending',
-            sha: context.payload.after,
             context: `Publish ${name} v${version.version}`,
             description: 'Running check...',
           });
 
           try {
-            throw new Error('Something went wrong');
-            // await client.repos.createCommitStatus({
-            //   owner: 'pqt',
-            //   repo: 'nhl',
-            //   state: 'success',
-            //   sha: context.payload.after,
-            //   context: `Publish ${name} v${version.version}`,
-            //   description: 'Check passed!',
-            // });
+            await client.repos.createCommitStatus({
+              owner,
+              repo,
+              sha,
+              state: 'success',
+              context: `Publish ${name} v${version.version}`,
+              description: 'Check passed!',
+            });
           } catch (error) {
             const message = error ? error.message : 'Something went wrong';
 
             await client.repos.createCommitStatus({
-              owner: 'pqt',
-              repo: 'nhl',
+              owner,
+              repo,
+              sha,
               state: 'error',
-              sha: context.payload.after,
               context: `Publish ${name} v${version.version}`,
               description: message,
             });

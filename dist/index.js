@@ -57,6 +57,12 @@ function run() {
                 return;
             }
             /**
+             * Shorthand aliases for commonly required payload values
+             */
+            const repo = github_1.context.payload.repository.name;
+            const owner = github_1.context.payload.repository.owner.login;
+            const sha = github_1.context.payload.after;
+            /**
              * Kill the action if the GITHUB_WORKSPACE environment variable is not set
              */
             if (typeof process.env.GITHUB_WORKSPACE === 'undefined') {
@@ -113,31 +119,30 @@ function run() {
                 yield Promise.all(packageManifests.map((manifest) => __awaiter(this, void 0, void 0, function* () {
                     const { name, version } = yield read_manifest_1.readManifest(manifest);
                     yield client.repos.createCommitStatus({
-                        owner: 'pqt',
-                        repo: 'nhl',
+                        owner,
+                        repo,
+                        sha,
                         state: 'pending',
-                        sha: github_1.context.payload.after,
                         context: `Publish ${name} v${version.version}`,
                         description: 'Running check...',
                     });
                     try {
-                        throw new Error('Something went wrong');
-                        // await client.repos.createCommitStatus({
-                        //   owner: 'pqt',
-                        //   repo: 'nhl',
-                        //   state: 'success',
-                        //   sha: context.payload.after,
-                        //   context: `Publish ${name} v${version.version}`,
-                        //   description: 'Check passed!',
-                        // });
+                        yield client.repos.createCommitStatus({
+                            owner,
+                            repo,
+                            sha,
+                            state: 'success',
+                            context: `Publish ${name} v${version.version}`,
+                            description: 'Check passed!',
+                        });
                     }
                     catch (error) {
                         const message = error ? error.message : 'Something went wrong';
                         yield client.repos.createCommitStatus({
-                            owner: 'pqt',
-                            repo: 'nhl',
+                            owner,
+                            repo,
+                            sha,
                             state: 'error',
-                            sha: github_1.context.payload.after,
                             context: `Publish ${name} v${version.version}`,
                             description: message,
                         });
