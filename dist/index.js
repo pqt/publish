@@ -24,8 +24,8 @@ exports.run = void 0;
 const core_1 = __webpack_require__(2186);
 const github_1 = __webpack_require__(5438);
 const globby_1 = __importDefault(__webpack_require__(3398));
-const read_manifest_1 = __webpack_require__(7315);
 const npm_1 = __webpack_require__(7337);
+const read_manifest_1 = __webpack_require__(7315);
 /**
  * Prints errors to the GitHub Actions console
  */
@@ -286,19 +286,24 @@ exports.getPublishedVersion = void 0;
 const ezSpawn = __importStar(__webpack_require__(7020));
 const semver_1 = __webpack_require__(1383);
 const getPublishedVersion = (name) => __awaiter(void 0, void 0, void 0, function* () {
-    const { stdout, stderr } = yield ezSpawn.async(['npm', 'view', name, 'version']);
-    if (stderr && stderr.includes('E404')) {
-        // options.debug(`The latest version of ${name} is at v0.0.0, as it was never published.`);
+    try {
+        const { stdout } = yield ezSpawn.async(['npm', 'view', name, 'version']);
+        /**
+         * The latest version published on NPM
+         */
+        const currentNpmVersionString = stdout.trim();
+        /**
+         * Parse/validate the version number
+         */
+        return new semver_1.SemVer(currentNpmVersionString);
+    }
+    catch (error) {
+        if (error && error.includes('E404')) {
+            // options.debug(`The latest version of ${name} is at v0.0.0, as it was never published.`);
+            return new semver_1.SemVer('0.0.0');
+        }
         return new semver_1.SemVer('0.0.0');
     }
-    /**
-     * The latest version published on NPM
-     */
-    const currentNpmVersionString = stdout.trim();
-    /**
-     * Parse/validate the version number
-     */
-    return new semver_1.SemVer(currentNpmVersionString);
 });
 exports.getPublishedVersion = getPublishedVersion;
 

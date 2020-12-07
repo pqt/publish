@@ -1,10 +1,8 @@
 import { debug as log, endGroup, getInput, setFailed, startGroup } from '@actions/core';
 import { context, getOctokit } from '@actions/github';
 import globby from 'globby';
-import { readManifest } from './utils/read-manifest';
-import * as ezSpawn from '@jsdevtools/ez-spawn';
-import { SemVer } from 'semver';
 import { getPublishedVersion } from './utils/npm';
+import { readManifest } from './utils/read-manifest';
 
 /**
  * Prints errors to the GitHub Actions console
