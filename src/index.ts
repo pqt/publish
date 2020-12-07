@@ -166,16 +166,17 @@ export async function run(): Promise<void> {
           debug(`Succesfully created a pending status check for ${name}`);
 
           try {
+            debug(`Attempting to find package on NPM`);
             const { stdout, stderr } = await ezSpawn.async(['npm', 'view', name, 'version']);
             debug(`Latest published npm version for ${name}`, { stdout, stderr });
 
             // #region
             // // If the package was not previously published, return version 0.0.0.
-            // if (stderr && stderr.includes('E404')) {
-            //   // options.debug(`The latest version of ${name} is at v0.0.0, as it was never published.`);
-            //   // return new SemVer('0.0.0');
-            //   throw new Error('Package is not published');
-            // }
+            if (stderr && stderr.includes('E404')) {
+              // options.debug(`The latest version of ${name} is at v0.0.0, as it was never published.`);
+              // return new SemVer('0.0.0');
+              throw new Error('Package is not published');
+            }
 
             // /**
             //  * The latest version published on NPM
@@ -204,6 +205,7 @@ export async function run(): Promise<void> {
             debug(`Succesfully updated status check for ${name}`);
           } catch (error) {
             const message = error ? error.message : 'Something went wrong';
+            debug('Publishing Error Message', { message });
 
             debug(`Attempting to update status check for ${name} to error state`);
             await client.repos.createCommitStatus({
@@ -212,7 +214,8 @@ export async function run(): Promise<void> {
               sha,
               state: 'error',
               context: `Publish ${name} v${version.version}`,
-              description: message,
+              // description: message,
+              description: 'Failed',
             });
             debug(`Succesfully updated status check for ${name}`);
           }
