@@ -166,6 +166,13 @@ function run() {
                     },
                 });
                 debug(`Found ${packageManifests.length} package manifests`);
+                /**
+                 * Fail if no package manifests were found
+                 */
+                if (packageManifests.length === 0) {
+                    core_1.setFailed('No package manifests were found');
+                    return;
+                }
                 debug('Starting to create status checks for each package that needs to be published');
                 yield Promise.all(packageManifests.map((manifest) => __awaiter(this, void 0, void 0, function* () {
                     debug(`Reading package manifest in ${manifest}`);

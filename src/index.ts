@@ -139,6 +139,14 @@ export async function run(): Promise<void> {
       });
       debug(`Found ${packageManifests.length} package manifests`);
 
+      /**
+       * Fail if no package manifests were found
+       */
+      if (packageManifests.length === 0) {
+        setFailed('No package manifests were found');
+        return;
+      }
+
       debug('Starting to create status checks for each package that needs to be published');
       await Promise.all(
         packageManifests.map(async (manifest) => {
