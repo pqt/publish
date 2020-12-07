@@ -94,7 +94,7 @@ export async function run(): Promise<void> {
      * Instantiate a GitHub Client instance
      */
     const client = getOctokit(GITHUB_TOKEN);
-    debug('Instantiated a GitHub Client instance');
+    debug('Instantiated GitHub Client');
 
     /**
      * Enforce we're not running the action on every push (unless it's on the default branch)
@@ -252,10 +252,9 @@ export async function run(): Promise<void> {
     //   endGroup();
     // }
 
-    throw 'Throw works!';
-    // setFailed('Failed just cause');
+    throw new Error('Throw works!');
   } catch (error) {
-    setFailed(error);
+    errorHandler(error as Error);
   }
 }
 

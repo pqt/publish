@@ -4,7 +4,7 @@
 
 ## Debugging
 
-Sometimes it's nice to get a deeper insight into what's going on without just looking into the code. Luckily GitHub makes it really easy to [Enable runner diagnostic logging](https://docs.github.com/en/free-pro-team@latest/actions/managing-workflow-runs/enabling-debug-logging#enabling-runner-diagnostic-logging). Just create a new repository secret named `ACTIONS_RUNNER_DEBUG` with the value `true` and you'll receive extensive logging of what's going on in the publishing flow that will hopefully help you tweak your inputs.
+Sometimes it's nice to get a deeper insight into what's going on without just looking into the code. Luckily GitHub makes it really easy to [Enable runner diagnostic logging](https://docs.github.com/en/free-pro-team@latest/actions/managing-workflow-runs/enabling-debug-logging#enabling-runner-diagnostic-logging). Just create a new repository secret named `ACTIONS_STEP_DEBUG` with the value `true` and you'll receive extensive logging of what's going on in the publishing flow that will hopefully help you tweak your inputs.
 
 ## Caveat
 

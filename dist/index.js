@@ -124,7 +124,7 @@ function run() {
              * Instantiate a GitHub Client instance
              */
             const client = github_1.getOctokit(GITHUB_TOKEN);
-            debug('Instantiated a GitHub Client instance');
+            debug('Instantiated GitHub Client');
             /**
              * Enforce we're not running the action on every push (unless it's on the default branch)
              */
@@ -263,11 +263,10 @@ function run() {
             //   console.log(`[RELEASE CANDIDATE]:`, true);
             //   endGroup();
             // }
-            throw 'Throw works!';
-            // setFailed('Failed just cause');
+            throw new Error('Throw works!');
         }
         catch (error) {
-            core_1.setFailed(error);
+            errorHandler(error);
         }
     });
 }
