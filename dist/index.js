@@ -165,8 +165,8 @@ function run() {
                         repo,
                         sha,
                         state: 'pending',
-                        context: `Publish ${name} v${version.version}`,
-                        description: 'Running check...',
+                        context: `Publish ${name}`,
+                        description: `Starting...`,
                     });
                     debug(`Succesfully created a pending status check for ${name}`);
                     try {
@@ -179,8 +179,8 @@ function run() {
                             repo,
                             sha,
                             state: 'success',
-                            context: `Publish ${name} v${version}`,
-                            description: 'Check passed!',
+                            context: `Publish ${name}`,
+                            description: `Published v${version}!`,
                         });
                         debug(`Succesfully updated status check for ${name}`);
                     }
@@ -193,9 +193,9 @@ function run() {
                             repo,
                             sha,
                             state: 'error',
-                            context: `Publish ${name} v${version.version}`,
+                            context: `Publish ${name}`,
                             // description: message,
-                            description: 'Failed',
+                            description: 'Failed to publish',
                         });
                         debug(`Succesfully updated status check for ${name}`);
                     }
