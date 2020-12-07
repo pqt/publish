@@ -1,31 +1,133 @@
-name: 'Build Status'
-on: push
+name: Continuous Integration
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: ['opened', 'edited', 'reopened', 'synchronize']
 
 jobs:
-  build:
-    name: 'Build Check'
-    runs-on: ubuntu-latest
-
+  Setup:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+        node: [14.9]
     steps:
-      - uses: actions/checkout@v2
+      - name: setup node v${{ matrix.node }}
+        uses: actions/setup-node@v1
         with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v1
+          node-version: ${{ matrix.node }}
+
+      - name: checkout repository
+        uses: actions/checkout@v2
+
+      - name: fetch main branch from origin
+        run: git fetch --no-tags --prune --depth=1 origin +refs/heads/main:refs/remotes/origin/main
+
+      - name: node_modules cache
+        uses: actions/cache@v2
+        id: workspace-cache
         with:
-          node-version: 12
-      - name: Get yarn cache
-        id: yarn-cache
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-      - name: Cache node modules
-        uses: actions/cache@v1
+          path: node_modules
+          key: ${{ runner.os }}-${{ matrix.node }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: ${{ runner.os }}-${{ matrix.node }}-yarn-
+
+      - name: install dependancies
+        run: yarn install --frozen-lockfile
+
+  Lint:
+    needs: [Setup]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+        node: [14.9]
+    steps:
+      - name: setup node v${{ matrix.node }}
+        uses: actions/setup-node@v1
         with:
-          path: ${{ steps.yarn-cache.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-      - run: yarn install
-      - run: yarn format
-      - run: yarn lint
-      - run: yarn test
-      - run: yarn build
-      - run: yarn package
+          node-version: ${{ matrix.node }}
+
+      - name: checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 3
+
+      - name: fetch main branch from origin
+        run: git fetch --no-tags --prune --depth=1 origin +refs/heads/main:refs/remotes/origin/main
+
+      - name: node_modules cache
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-${{ matrix.node }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: ${{ runner.os }}-${{ matrix.node }}-yarn-
+
+      - name: run code lint check
+        run: yarn lint
+
+  Test:
+    needs: [Setup]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+        node: [14.9]
+    steps:
+      - name: setup node v${{ matrix.node }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 3
+
+      - name: fetch main branch from origin
+        run: git fetch --no-tags --prune --depth=1 origin +refs/heads/main:refs/remotes/origin/main
+
+      - name: node_modules cache
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-${{ matrix.node }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: ${{ runner.os }}-${{ matrix.node }}-yarn-
+
+      - name: run unit test check
+        run: yarn test
+
+  Build:
+    needs: [Setup, Lint, Test]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+        node: [14.9]
+    steps:
+      - name: setup node v${{ matrix.node }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 3
+
+      - name: fetch main branch from origin
+        run: git fetch --no-tags --prune --depth=1 origin +refs/heads/main:refs/remotes/origin/main
+
+      - name: node_modules cache
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-${{ matrix.node }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: ${{ runner.os }}-${{ matrix.node }}-yarn-
+
+      - name: build project
+        run: yarn build
+
+      - name: package action bundle
+        run: yarn package

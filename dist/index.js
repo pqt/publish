@@ -56,6 +56,7 @@ function run() {
              * Potential Future Inputs
              */
             const buildFolder = 'dist';
+            const publishCanaryPackages = true;
             /**
              * Log the full context for debugging purposes
              * TODO: Move to debugging ONLY before production

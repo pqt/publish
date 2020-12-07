@@ -14,6 +14,7 @@ export async function run(): Promise<void> {
      * Potential Future Inputs
      */
     const buildFolder = 'dist';
+    const publishCanaryPackages = true;
 
     /**
      * Log the full context for debugging purposes
