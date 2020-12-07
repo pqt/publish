@@ -1,4 +1,4 @@
-import { endGroup, getInput, setFailed, startGroup } from '@actions/core';
+import { debug as log, endGroup, getInput, setFailed, startGroup } from '@actions/core';
 import { context, getOctokit } from '@actions/github';
 import globby from 'globby';
 import { readManifest } from './utils/read-manifest';
@@ -6,39 +6,67 @@ import * as ezSpawn from '@jsdevtools/ez-spawn';
 import { SemVer } from 'semver';
 
 /**
+ * Prints errors to the GitHub Actions console
+ */
+function errorHandler(error: Error): void {
+  const message = error.stack || error.message || String(error);
+  setFailed(message);
+}
+
+/**
+ * Prints debugging messages to the GitHub Actions console
+ *
+ * @param message debug synopsis
+ * @param data optional object of contextually relevant data
+ */
+function debug(message: string, data?: object): void {
+  if (data) {
+    startGroup(message);
+    log(JSON.stringify(data));
+    endGroup();
+    return;
+  }
+
+  log(message);
+  return;
+}
+
+/**
  * The entrypoint for the GitHub Action
  */
 export async function run(): Promise<void> {
   try {
     /**
-     * Potential Future Inputs
+     * Setup global error handlers
+     */
+    process.on('uncaughtException', errorHandler);
+    process.on('unhandledRejection', errorHandler);
+
+    /**
+     * Inputs
      */
     const buildFolder = 'dist';
     const publishCanaryPackages = true;
+    const GITHUB_TOKEN = getInput('GITHUB_TOKEN', { required: true });
 
     /**
      * Log the full context for debugging purposes
-     * TODO: Move to debugging ONLY before production
      */
-    startGroup('[REMOVE] Full Context Object');
-    console.log(JSON.stringify(context));
-    endGroup();
+    debug('Full Context', context);
 
     /**
      * Log the available environment variables
-     * TODO: Move to debugging ONLY before production
      */
-    startGroup('[REMOVE] Environment Variables');
-    console.log(JSON.stringify(process.env));
-    endGroup();
+    debug('Environment Variables', process.env);
 
     /**
-     * Kill the action if we can't find a repository in the payload
+     * Kill the action if we can't find a repository object in the payload
      */
     if (typeof context.payload.repository === 'undefined') {
       setFailed('Could not find the repository context.');
       return;
     }
+    debug('Found a repository object in the payload');
 
     /**
      * Shorthand aliases for commonly required payload values
@@ -54,6 +82,7 @@ export async function run(): Promise<void> {
       setFailed('GITHUB_WORKSPACE environment variable is not set.');
       return;
     }
+    debug('Passed the GITHUB_WORKSPACE environment variable check');
 
     /**
      * Destructure:
@@ -62,15 +91,10 @@ export async function run(): Promise<void> {
     const { eventName } = context;
 
     /**
-     * Status Check URL
-     */
-    // const statusCheckUrl = `https://api.github.com/repos/${context.payload.repository.full_name}/statuses/${sha}`;
-
-    /**
      * Instantiate a GitHub Client instance
      */
-    const token = getInput('GITHUB_TOKEN', { required: true });
-    const client = getOctokit(token);
+    const client = getOctokit(GITHUB_TOKEN);
+    debug('Instantiated a GitHub Client instance');
 
     /**
      * Enforce we're not running the action on every push (unless it's on the default branch)
@@ -91,6 +115,7 @@ export async function run(): Promise<void> {
        *  - v<version>
        */
     } else if (eventName === 'pull_request') {
+      debug('Running via Pull Request');
       /**
        * If the event type is a pull request we need to make sure that payload context exists
        */
@@ -98,19 +123,30 @@ export async function run(): Promise<void> {
         setFailed('Could not find the pull_request context.');
         return;
       }
+      debug('Found a pull_request object in the payload');
 
-      console.log('Searching in', `${process.env.GITHUB_WORKSPACE}/${buildFolder}`);
-
-      // const paths = await globby(`${process.env.GITHUB_WORKSPACE}/${buildFolder}`);
+      /**
+       * Perform Search for all package manifest files in the build folder
+       *
+       * TODO: perhaps a better name for this?
+       * CONTEXT: A project might reasonably have their project root contain the package.json
+       */
+      debug(`Attempting to search for package.json files in ${process.env.GITHUB_WORKSPACE}/${buildFolder}`);
       const packageManifests = await globby(`${process.env.GITHUB_WORKSPACE}/${buildFolder}`, {
         expandDirectories: {
           files: ['package.json'],
         },
       });
+      debug(`Found ${packageManifests.length} package manifests`);
+
+      debug('Starting to create status checks for each package that needs to be published');
       await Promise.all(
         packageManifests.map(async (manifest) => {
+          debug(`Reading package manifest in ${manifest}`);
           const { name, version } = await readManifest(manifest);
+          debug(`Manifest contents`, { name, version });
 
+          debug(`Attempting to create a status check for ${name}`);
           await client.repos.createCommitStatus({
             owner,
             repo,
@@ -119,34 +155,36 @@ export async function run(): Promise<void> {
             context: `Publish ${name} v${version.version}`,
             description: 'Running check...',
           });
+          debug(`Succesfully created a pending status check for ${name}`);
 
           try {
             const { stdout, stderr } = await ezSpawn.async(['npm', 'view', name, 'version']);
+            debug(`Latest published npm version for ${name}`, { stdout, stderr });
 
-            console.log(stdout);
-            console.log(stderr);
+            // #region
+            // // If the package was not previously published, return version 0.0.0.
+            // if (stderr && stderr.includes('E404')) {
+            //   // options.debug(`The latest version of ${name} is at v0.0.0, as it was never published.`);
+            //   // return new SemVer('0.0.0');
+            //   throw new Error('Package is not published');
+            // }
 
-            // If the package was not previously published, return version 0.0.0.
-            if (stderr && stderr.includes('E404')) {
-              // options.debug(`The latest version of ${name} is at v0.0.0, as it was never published.`);
-              // return new SemVer('0.0.0');
-              throw new Error('Package is not published');
-            }
+            // /**
+            //  * The latest version published on NPM
+            //  */
+            // const currentNpmVersionString = stdout.trim();
 
-            /**
-             * The latest version published on NPM
-             */
-            const currentNpmVersionString = stdout.trim();
+            // /**
+            //  * Parse/validate the version number
+            //  */
+            // const currentNpmVersion = new SemVer(currentNpmVersionString);
 
-            /**
-             * Parse/validate the version number
-             */
-            const currentNpmVersion = new SemVer(currentNpmVersionString);
+            // if (currentNpmVersion === version) {
+            //   throw new Error(`${version.version} is already published`);
+            // }
+            // #endregion
 
-            if (currentNpmVersion === version) {
-              throw new Error(`${version.version} is already published`);
-            }
-
+            debug(`Attempting to update status check for ${name} to success state`);
             await client.repos.createCommitStatus({
               owner,
               repo,
@@ -155,9 +193,11 @@ export async function run(): Promise<void> {
               context: `Publish ${name} v${version.version}`,
               description: 'Check passed!',
             });
+            debug(`Succesfully updated status check for ${name}`);
           } catch (error) {
             const message = error ? error.message : 'Something went wrong';
 
+            debug(`Attempting to update status check for ${name} to error state`);
             await client.repos.createCommitStatus({
               owner,
               repo,
@@ -166,6 +206,7 @@ export async function run(): Promise<void> {
               context: `Publish ${name} v${version.version}`,
               description: message,
             });
+            debug(`Succesfully updated status check for ${name}`);
           }
         })
       );
