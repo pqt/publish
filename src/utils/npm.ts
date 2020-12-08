@@ -1,7 +1,7 @@
 import * as ezSpawn from '@jsdevtools/ez-spawn';
 import { SemVer } from 'semver';
 
-export const getPublishedVersion = async (name: string) => {
+export const getPublishedVersion = async (name: string): Promise<SemVer> => {
   try {
     const { stdout } = await ezSpawn.async(['npm', 'view', name, 'version']);
 
