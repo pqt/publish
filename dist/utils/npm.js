@@ -83,10 +83,11 @@ exports.getPublishedVersion = getPublishedVersion;
 const publishPackage = (name, version) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield exports.setConfig();
-        // const { stdout } = await ezSpawn.async(['npm', 'publish']);
+        // throw `Attempted to publish ${name} @${version}`;
+        const { stdout } = yield ezSpawn.async(['npm', 'publish', '--dry-run']);
     }
     catch (error) {
-        console.log(error);
+        throw error;
     }
 });
 exports.publishPackage = publishPackage;

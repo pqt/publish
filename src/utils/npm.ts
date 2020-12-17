@@ -52,8 +52,9 @@ export const getPublishedVersion = async (name: string): Promise<SemVer> => {
 export const publishPackage = async (name: string, version: SemVer) => {
   try {
     await setConfig();
-    // const { stdout } = await ezSpawn.async(['npm', 'publish']);
+    // throw `Attempted to publish ${name} @${version}`;
+    const { stdout } = await ezSpawn.async(['npm', 'publish', '--dry-run']);
   } catch (error) {
-    console.log(error);
+    throw error;
   }
 };

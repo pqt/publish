@@ -83,8 +83,9 @@ function run() {
             /**
              * Inputs
              */
-            const buildFolder = 'dist';
-            const publishCanaryPackages = true;
+            const BUILD_FOLDER = 'dist';
+            const CANARY_PACKAGES = true;
+            const DRY_RUN = true;
             const GITHUB_TOKEN = core_1.getInput('GITHUB_TOKEN', { required: true });
             const NPM_TOKEN = core_1.getInput('NPM_TOKEN', { required: true });
             /**
@@ -161,8 +162,8 @@ function run() {
                  * TODO: perhaps a better name for this?
                  * CONTEXT: A project might reasonably have their project root contain the package.json
                  */
-                debug(`Attempting to search for package.json files in ${process.env.GITHUB_WORKSPACE}/${buildFolder}`);
-                const packageManifests = yield globby_1.default(`${process.env.GITHUB_WORKSPACE}/${buildFolder}`, {
+                debug(`Attempting to search for package.json files in ${process.env.GITHUB_WORKSPACE}/${BUILD_FOLDER}`);
+                const packageManifests = yield globby_1.default(`${process.env.GITHUB_WORKSPACE}/${BUILD_FOLDER}`, {
                     expandDirectories: {
                         files: ['package.json'],
                     },
@@ -360,10 +361,11 @@ exports.getPublishedVersion = getPublishedVersion;
 const publishPackage = (name, version) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield exports.setConfig();
-        // const { stdout } = await ezSpawn.async(['npm', 'publish']);
+        // throw `Attempted to publish ${name} @${version}`;
+        const { stdout } = yield ezSpawn.async(['npm', 'publish', '--dry-run']);
     }
     catch (error) {
-        console.log(error);
+        throw error;
     }
 });
 exports.publishPackage = publishPackage;

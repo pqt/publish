@@ -45,8 +45,9 @@ export async function run(): Promise<void> {
     /**
      * Inputs
      */
-    const buildFolder = 'dist';
-    const publishCanaryPackages = true;
+    const BUILD_FOLDER = 'dist';
+    const CANARY_PACKAGES = true;
+    const DRY_RUN = true;
     const GITHUB_TOKEN = getInput('GITHUB_TOKEN', { required: true });
     const NPM_TOKEN = getInput('NPM_TOKEN', { required: true });
 
@@ -132,8 +133,8 @@ export async function run(): Promise<void> {
        * TODO: perhaps a better name for this?
        * CONTEXT: A project might reasonably have their project root contain the package.json
        */
-      debug(`Attempting to search for package.json files in ${process.env.GITHUB_WORKSPACE}/${buildFolder}`);
-      const packageManifests = await globby(`${process.env.GITHUB_WORKSPACE}/${buildFolder}`, {
+      debug(`Attempting to search for package.json files in ${process.env.GITHUB_WORKSPACE}/${BUILD_FOLDER}`);
+      const packageManifests = await globby(`${process.env.GITHUB_WORKSPACE}/${BUILD_FOLDER}`, {
         expandDirectories: {
           files: ['package.json'],
         },
