@@ -186,9 +186,9 @@ function run() {
                     return;
                 }
                 debug('Starting to create status checks for each package that needs to be published');
-                const publishPackages = packageManifests.map((manifestPath) => __awaiter(this, void 0, void 0, function* () {
+                const packagesToPublish = packageManifests.map((manifestPath) => __awaiter(this, void 0, void 0, function* () {
                     const manifest = yield npm.readManifest(manifestPath);
-                    return yield client.repos.createCommitStatus({
+                    yield client.repos.createCommitStatus({
                         owner,
                         repo,
                         sha: commitHash,
@@ -197,20 +197,29 @@ function run() {
                         description: `Starting...`,
                     });
                     // try {
+                    yield npm.publish(manifestPath);
+                    yield client.repos.createCommitStatus({
+                        owner,
+                        repo,
+                        sha: commitHash,
+                        state: 'success',
+                        context: `Publish ${manifest.name}`,
+                        description: `v0.0.0-${commitShortHash}`,
+                    });
                     // } catch (error) {
-                    //   console.log(error);
+                    //   throw error;
                     // }
                 }));
                 try {
-                    for (var publishPackages_1 = __asyncValues(publishPackages), publishPackages_1_1; publishPackages_1_1 = yield publishPackages_1.next(), !publishPackages_1_1.done;) {
-                        const item = publishPackages_1_1.value;
+                    for (var packagesToPublish_1 = __asyncValues(packagesToPublish), packagesToPublish_1_1; packagesToPublish_1_1 = yield packagesToPublish_1.next(), !packagesToPublish_1_1.done;) {
+                        const item = packagesToPublish_1_1.value;
                         console.log(item);
                     }
                 }
                 catch (e_1_1) { e_1 = { error: e_1_1 }; }
                 finally {
                     try {
-                        if (publishPackages_1_1 && !publishPackages_1_1.done && (_a = publishPackages_1.return)) yield _a.call(publishPackages_1);
+                        if (packagesToPublish_1_1 && !packagesToPublish_1_1.done && (_a = packagesToPublish_1.return)) yield _a.call(packagesToPublish_1);
                     }
                     finally { if (e_1) throw e_1.error; }
                 }
@@ -324,10 +333,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.readManifest = void 0;
+exports.publish = exports.readManifest = void 0;
+const ez_spawn_1 = __importDefault(__webpack_require__(7020));
 const fs_1 = __webpack_require__(5747);
 const semver_1 = __webpack_require__(1383);
+const path_1 = __webpack_require__(5622);
 /**
  * Read package manifest
  */
@@ -380,12 +394,16 @@ exports.readManifest = readManifest;
 /**
  * Publish a new version of a package to the registry
  */
-// export async function publish() {
-//   try {
-//   } catch (error) {
-//     throw error;
-//   }
-// }
+function publish(path) {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield ez_spawn_1.default.async(['npm', 'publish', '--dry-run'], { cwd: path_1.resolve(path_1.dirname(path)) });
+        // try {
+        // } catch (error) {
+        //   throw error;
+        // }
+    });
+}
+exports.publish = publish;
 
 
 /***/ }),
@@ -1598,6 +1616,564 @@ function checkBypass(reqUrl) {
     return false;
 }
 exports.checkBypass = checkBypass;
+
+
+/***/ }),
+
+/***/ 2224:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+const normalizeArgs = __webpack_require__(3894);
+const normalizeResult = __webpack_require__(4049);
+const maybe = __webpack_require__(9581);
+const spawn = __webpack_require__(2746);
+
+module.exports = async;
+
+/**
+ * Executes the given command asynchronously, and returns the buffered
+ * results via a callback or Promise.
+ *
+ * @param {string|string[]} command - The command to run
+ * @param {string|string[]} [args] - The command arguments
+ * @param {object} [options] - options
+ * @param {function} [callback] - callback that will receive the results
+ *
+ * @returns {Promise<Process>|undefined}
+ * Returns a Promise if no callback is given. The promise resolves with
+ * a {@link Process} object.
+ *
+ * @see {@link normalizeArgs} for argument details
+ */
+function async () {
+  // Normalize the function arguments
+  let { command, args, options, callback, error } = normalizeArgs(arguments);
+
+  return maybe(callback, new Promise((resolve, reject) => {
+    if (error) {
+      // Invalid arguments
+      normalizeResult({ command, args, options, error });
+    }
+    else {
+      let spawnedProcess;
+
+      try {
+        // Spawn the program
+        spawnedProcess = spawn(command, args, options);
+      }
+      catch (error) {
+        // An error occurred while spawning the process
+        normalizeResult({ error, command, args, options });
+      }
+
+      let pid = spawnedProcess.pid;
+      let stdout = options.encoding === "buffer" ? Buffer.from([]) : "";
+      let stderr = options.encoding === "buffer" ? Buffer.from([]) : "";
+
+      spawnedProcess.stdout && spawnedProcess.stdout.on("data", (data) => {
+        if (typeof stdout === "string") {
+          stdout += data.toString();
+        }
+        else {
+          stdout = Buffer.concat([stdout, data]);
+        }
+      });
+
+      spawnedProcess.stderr && spawnedProcess.stderr.on("data", (data) => {
+        if (typeof stderr === "string") {
+          stderr += data.toString();
+        }
+        else {
+          stderr = Buffer.concat([stderr, data]);
+        }
+      });
+
+      spawnedProcess.on("error", (error) => {
+        try {
+          normalizeResult({ error, command, args, options, pid, stdout, stderr });
+        }
+        catch (error) {
+          reject(error);
+        }
+      });
+
+      spawnedProcess.on("exit", (status, signal) => {
+        try {
+          resolve(normalizeResult({ command, args, options, pid, stdout, stderr, status, signal }));
+        }
+        catch (error) {
+          reject(error);
+        }
+      });
+    }
+  }));
+}
+
+
+/***/ }),
+
+/***/ 7020:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+module.exports.sync = __webpack_require__(7336);
+module.exports.async = __webpack_require__(2224);
+
+
+/***/ }),
+
+/***/ 3894:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+const { parseArgsStringToArgv } = __webpack_require__(9453);  // possible alternative: parse-spawn-args
+const detectType = __webpack_require__(4919);
+
+module.exports = normalizeArgs;
+
+/**
+ * This function normalizes the arguments of the {@link sync} and {@link async}
+ * so they can be passed to Node's {@link child_process.spawn} or
+ * {@link child_process.spawn} functions.
+ *
+ * @param {string|string[]} command
+ * The command to run (e.g. "git"), or the command and its arguments as a string
+ * (e.g. "git commit -a -m fixed_stuff"), or the command and its arguments as an
+ * array (e.g. ["git", "commit", "-a", "-m", "fixed stuff"]).
+ *
+ * @param {string|string[]} [args]
+ * The command arguments as a string (e.g. "git commit -a -m fixed_stuff") or as an array
+ * (e.g. ["git", "commit", "-a", "-m", "fixed stuff"]).
+ *
+ * @param {object} [options]
+ * The same options as {@link child_process.spawn} or {@link child_process.spawnSync}.
+ *
+ * @param {function} [callback]
+ * The callback that will receive the results, if applicable.
+ *
+ * @returns {object}
+ */
+function normalizeArgs (params) {
+  let command, args, options, callback, error;
+
+  try {
+    // Shift the arguments, if necessary
+    ({ command, args, options, callback } = shiftArgs(params));
+
+    let commandArgs = [];
+
+    if (typeof command === "string" && args === undefined) {
+      // The command parameter is actually the command AND arguments,
+      // so split the string into an array
+      command = splitArgString(command);
+    }
+
+    if (Array.isArray(command)) {
+      // Split the command from the arguments
+      commandArgs = command.slice(1);
+      command = command[0];
+    }
+
+    if (typeof args === "string") {
+      // Convert the `args` argument from a string an array
+      args = splitArgString(args);
+    }
+
+    if (Array.isArray(args)) {
+      // Add these arguments to any arguments from above
+      args = commandArgs.concat(args);
+    }
+
+    if (args === undefined || args === null) {
+      args = commandArgs;
+    }
+
+    if (options === undefined || options === null) {
+      options = {};
+    }
+
+    // Set default options
+    options.encoding = options.encoding || "utf8";
+
+    // Validate all arguments
+    validateArgs(command, args, options, callback);
+  }
+  catch (err) {
+    error = err;
+
+    // Sanitize args that are used as output
+    command = String(command || "");
+    args = (Array.isArray(args) ? args : []).map((arg) => String(arg || ""));
+  }
+
+  return { command, args, options, callback, error };
+}
+
+/**
+ * Detects whether any optional arguments have been omitted,
+ * and shifts the other arguments as needed.
+ *
+ * @param {string|string[]} command
+ * @param {string|string[]} [args]
+ * @param {object} [options]
+ * @param {function} [callback]
+ * @returns {object}
+ */
+function shiftArgs (params) {
+  params = Array.prototype.slice.call(params);
+  let command, args, options, callback;
+
+  // Check for a callback as the final parameter
+  let lastParam = params[params.length - 1];
+  if (typeof lastParam === "function") {
+    callback = lastParam;
+    params.pop();
+  }
+
+  // Check for an options object as the second-to-last parameter
+  lastParam = params[params.length - 1];
+  if (lastParam === null || lastParam === undefined ||
+  (typeof lastParam === "object" && !Array.isArray(lastParam))) {
+    options = lastParam;
+    params.pop();
+  }
+
+  // The first parameter is the command
+  command = params.shift();
+
+  // All remaining parameters are the args
+  if (params.length === 0) {
+    args = undefined;
+  }
+  else if (params.length === 1 && Array.isArray(params[0])) {
+    args = params[0];
+  }
+  else if (params.length === 1 && params[0] === "") {
+    args = [];
+  }
+  else {
+    args = params;
+  }
+
+  return { command, args, options, callback };
+}
+
+/**
+ * Validates all arguments, and throws an error if any are invalid.
+ *
+ * @param {string} command
+ * @param {string[]} args
+ * @param {object} options
+ * @param {function} [callback]
+ */
+function validateArgs (command, args, options, callback) {
+  if (command === undefined || command === null) {
+    throw new Error("The command to execute is missing.");
+  }
+
+  if (typeof command !== "string") {
+    throw new Error("The command to execute should be a string, not " + friendlyType(command));
+  }
+
+  if (!Array.isArray(args)) {
+    throw new Error(
+      "The command arguments should be a string or an array, not " +
+      friendlyType(args)
+    );
+  }
+
+  for (let i = 0; i < args.length; i++) {
+    let arg = args[i];
+
+    if (typeof arg !== "string") {
+      throw new Error(
+        `The command arguments should be strings, but argument #${i + 1} is ` +
+        friendlyType(arg)
+      );
+    }
+  }
+
+  if (typeof options !== "object") {
+    throw new Error(
+      "The options should be an object, not " +
+      friendlyType(options)
+    );
+  }
+
+  if (callback !== undefined && callback !== null) {
+    if (typeof callback !== "function") {
+      throw new Error("The callback should be a function, not " + friendlyType(callback));
+    }
+  }
+}
+
+/**
+ * Splits an argument string (e.g. git commit -a -m "fixed stuff")
+ * into an array (e.g. ["git", "commit", "-a", "-m", "fixed stuff"]).
+ *
+ * @param {string} argString
+ * @returns {string[]}
+ */
+function splitArgString (argString) {
+  try {
+    return parseArgsStringToArgv(argString);
+  }
+  catch (error) {
+    throw new Error(`Could not parse the string: ${argString}\n${error.message}`);
+  }
+}
+
+/**
+ * Returns the friendly type name of the given value, for use in error messages.
+ *
+ * @param {*} val
+ * @returns {string}
+ */
+function friendlyType (val) {
+  let type = detectType(val);
+  let firstChar = String(type)[0].toLowerCase();
+
+  if (["a", "e", "i", "o", "u"].indexOf(firstChar) === -1) {
+    return `a ${type}.`;
+  }
+  else {
+    return `an ${type}.`;
+  }
+}
+
+
+/***/ }),
+
+/***/ 4049:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+const Process = __webpack_require__(7961);
+const ProcessError = __webpack_require__(8751);
+
+module.exports = normalizeResult;
+
+/**
+ * @param {string} [command] - The command used to run the process
+ * @param {string[]} [args] - The command-line arguments that were passed to the process
+ * @param {number} [pid] - The process ID
+ * @param {string|Buffer} [stdout] - The process's stdout
+ * @param {string|Buffer} [stderr] - The process's stderr
+ * @param {string[]|Buffer[]} [output] - The process's stdio
+ * @param {number} [status] - The process's status code
+ * @param {string} [signal] - The signal that was used to kill the process, if any
+ * @param {object} [options] - The options used to run the process
+ * @param {Error} [error] - An error, if one occurred
+ * @returns {Process}
+ */
+function normalizeResult ({ command, args, pid, stdout, stderr, output, status, signal, options, error }) {
+  let process = new Process({ command, args, pid, stdout, stderr, output, status, signal, options });
+
+  if (error) {
+    if (process.status === undefined) {
+      process.status = null;
+    }
+    throw Object.assign(error, process);
+  }
+  else if (process.status) {
+    throw new ProcessError(process);
+  }
+  else {
+    return process;
+  }
+}
+
+
+/***/ }),
+
+/***/ 8751:
+/***/ ((module) => {
+
+"use strict";
+
+
+/**
+ * An instance of this class is returned by {@link sync} and {@link async} when the process exits
+ * with a non-zero status code.
+ */
+module.exports = class ProcessError extends Error {
+  constructor (process) {
+    let message = `${process.toString()} exited with a status of ${process.status}.`;
+
+    if (process.stderr.length > 0) {
+      message += "\n\n" + process.stderr.toString().trim();
+    }
+
+    super(message);
+    Object.assign(this, process);
+    this.name = ProcessError.name;
+  }
+};
+
+
+/***/ }),
+
+/***/ 7961:
+/***/ ((module) => {
+
+"use strict";
+
+
+/**
+ * An instance of this class is returned by {@link sync} and {@link async}.
+ * It contains information about how the process was spawned, how it exited, and its output.
+ */
+module.exports = class Process {
+  /**
+   * @param {object} props - Initial property values
+   */
+  constructor ({ command, args, pid, stdout, stderr, output, status, signal, options }) {
+    options = options || {};
+    stdout = stdout || (options.encoding === "buffer" ? Buffer.from([]) : "");
+    stderr = stderr || (options.encoding === "buffer" ? Buffer.from([]) : "");
+    output = output || [options.input || null, stdout, stderr];
+
+    /**
+     * The command that was used to spawn the process
+     *
+     * @type {string}
+     */
+    this.command = command || "";
+
+    /**
+     * The command-line arguments that were passed to the process.
+     *
+     * @type {string[]}
+     */
+    this.args = args || [];
+
+    /**
+     * The numeric process ID assigned by the operating system
+     *
+     * @type {number}
+     */
+    this.pid = pid || 0;
+
+    /**
+     * The process's standard output
+     *
+     * @type {Buffer|string}
+     */
+
+    this.stdout = output[1];
+
+    /**
+     * The process's error output
+     *
+     * @type {Buffer|string}
+     */
+    this.stderr = output[2];
+
+    /**
+     * The process's stdio [stdin, stdout, stderr]
+     *
+     * @type {Buffer[]|string[]}
+     */
+    this.output = output;
+
+    /**
+     * The process's status code
+     *
+     * @type {number}
+     */
+    this.status = status;
+
+    /**
+     * The signal used to kill the process, if applicable
+     *
+     * @type {string}
+     */
+    this.signal = signal || null;
+  }
+
+  /**
+   * Returns the full command and arguments used to spawn the process
+   *
+   * @type {string}
+   */
+  toString () {
+    let string = this.command;
+
+    for (let arg of this.args) {
+      // Escape quotes
+      arg = arg.replace(/"/g, '\\"');
+
+      if (arg.indexOf(" ") >= 0) {
+        // Add quotes if the arg contains whitespace
+        string += ` "${arg}"`;
+      }
+      else {
+        string += ` ${arg}`;
+      }
+    }
+
+    return string;
+  }
+};
+
+
+/***/ }),
+
+/***/ 7336:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+const normalizeArgs = __webpack_require__(3894);
+const normalizeResult = __webpack_require__(4049);
+const spawnSync = __webpack_require__(2746).sync;
+
+module.exports = sync;
+
+/**
+ * Executes the given command synchronously, and returns the buffered results.
+ *
+ * @param {string|string[]} command - The command to run
+ * @param {string|string[]} [args] - The command arguments
+ * @param {object} [options] - options
+ * @returns {Process}
+ *
+ * @see {@link normalizeArgs} for argument details
+ */
+function sync () {
+  // Normalize the function arguments
+  let { command, args, options, error } = normalizeArgs(arguments);
+
+  if (error) {
+    // Invalid arguments
+    normalizeResult({ command, args, options, error });
+  }
+  else {
+    let result;
+
+    try {
+      // Run the program
+      result = spawnSync(command, args, options);
+    }
+    catch (error) {
+      // An error occurred while spawning or killing the process
+      normalizeResult({ error, command, args, options });
+    }
+
+    // Return the results or throw an error
+    return normalizeResult(Object.assign({}, result, { command, args, options }));
+  }
+}
 
 
 /***/ }),
@@ -5913,6 +6489,415 @@ exports.flatten = (...args) => {
 
 /***/ }),
 
+/***/ 9581:
+/***/ ((module) => {
+
+"use strict";
+
+
+var next = (global.process && process.nextTick) || global.setImmediate || function (f) {
+  setTimeout(f, 0)
+}
+
+module.exports = function maybe (cb, promise) {
+  if (cb) {
+    promise
+      .then(function (result) {
+        next(function () { cb(null, result) })
+      }, function (err) {
+        next(function () { cb(err) })
+      })
+    return undefined
+  }
+  else {
+    return promise
+  }
+}
+
+
+/***/ }),
+
+/***/ 2746:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+const cp = __webpack_require__(3129);
+const parse = __webpack_require__(6855);
+const enoent = __webpack_require__(4101);
+
+function spawn(command, args, options) {
+    // Parse the arguments
+    const parsed = parse(command, args, options);
+
+    // Spawn the child process
+    const spawned = cp.spawn(parsed.command, parsed.args, parsed.options);
+
+    // Hook into child process "exit" event to emit an error if the command
+    // does not exists, see: https://github.com/IndigoUnited/node-cross-spawn/issues/16
+    enoent.hookChildProcess(spawned, parsed);
+
+    return spawned;
+}
+
+function spawnSync(command, args, options) {
+    // Parse the arguments
+    const parsed = parse(command, args, options);
+
+    // Spawn the child process
+    const result = cp.spawnSync(parsed.command, parsed.args, parsed.options);
+
+    // Analyze if the command does not exist, see: https://github.com/IndigoUnited/node-cross-spawn/issues/16
+    result.error = result.error || enoent.verifyENOENTSync(result.status, parsed);
+
+    return result;
+}
+
+module.exports = spawn;
+module.exports.spawn = spawn;
+module.exports.sync = spawnSync;
+
+module.exports._parse = parse;
+module.exports._enoent = enoent;
+
+
+/***/ }),
+
+/***/ 4101:
+/***/ ((module) => {
+
+"use strict";
+
+
+const isWin = process.platform === 'win32';
+
+function notFoundError(original, syscall) {
+    return Object.assign(new Error(`${syscall} ${original.command} ENOENT`), {
+        code: 'ENOENT',
+        errno: 'ENOENT',
+        syscall: `${syscall} ${original.command}`,
+        path: original.command,
+        spawnargs: original.args,
+    });
+}
+
+function hookChildProcess(cp, parsed) {
+    if (!isWin) {
+        return;
+    }
+
+    const originalEmit = cp.emit;
+
+    cp.emit = function (name, arg1) {
+        // If emitting "exit" event and exit code is 1, we need to check if
+        // the command exists and emit an "error" instead
+        // See https://github.com/IndigoUnited/node-cross-spawn/issues/16
+        if (name === 'exit') {
+            const err = verifyENOENT(arg1, parsed, 'spawn');
+
+            if (err) {
+                return originalEmit.call(cp, 'error', err);
+            }
+        }
+
+        return originalEmit.apply(cp, arguments); // eslint-disable-line prefer-rest-params
+    };
+}
+
+function verifyENOENT(status, parsed) {
+    if (isWin && status === 1 && !parsed.file) {
+        return notFoundError(parsed.original, 'spawn');
+    }
+
+    return null;
+}
+
+function verifyENOENTSync(status, parsed) {
+    if (isWin && status === 1 && !parsed.file) {
+        return notFoundError(parsed.original, 'spawnSync');
+    }
+
+    return null;
+}
+
+module.exports = {
+    hookChildProcess,
+    verifyENOENT,
+    verifyENOENTSync,
+    notFoundError,
+};
+
+
+/***/ }),
+
+/***/ 6855:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+const path = __webpack_require__(5622);
+const resolveCommand = __webpack_require__(7274);
+const escape = __webpack_require__(4274);
+const readShebang = __webpack_require__(1252);
+
+const isWin = process.platform === 'win32';
+const isExecutableRegExp = /\.(?:com|exe)$/i;
+const isCmdShimRegExp = /node_modules[\\/].bin[\\/][^\\/]+\.cmd$/i;
+
+function detectShebang(parsed) {
+    parsed.file = resolveCommand(parsed);
+
+    const shebang = parsed.file && readShebang(parsed.file);
+
+    if (shebang) {
+        parsed.args.unshift(parsed.file);
+        parsed.command = shebang;
+
+        return resolveCommand(parsed);
+    }
+
+    return parsed.file;
+}
+
+function parseNonShell(parsed) {
+    if (!isWin) {
+        return parsed;
+    }
+
+    // Detect & add support for shebangs
+    const commandFile = detectShebang(parsed);
+
+    // We don't need a shell if the command filename is an executable
+    const needsShell = !isExecutableRegExp.test(commandFile);
+
+    // If a shell is required, use cmd.exe and take care of escaping everything correctly
+    // Note that `forceShell` is an hidden option used only in tests
+    if (parsed.options.forceShell || needsShell) {
+        // Need to double escape meta chars if the command is a cmd-shim located in `node_modules/.bin/`
+        // The cmd-shim simply calls execute the package bin file with NodeJS, proxying any argument
+        // Because the escape of metachars with ^ gets interpreted when the cmd.exe is first called,
+        // we need to double escape them
+        const needsDoubleEscapeMetaChars = isCmdShimRegExp.test(commandFile);
+
+        // Normalize posix paths into OS compatible paths (e.g.: foo/bar -> foo\bar)
+        // This is necessary otherwise it will always fail with ENOENT in those cases
+        parsed.command = path.normalize(parsed.command);
+
+        // Escape command & arguments
+        parsed.command = escape.command(parsed.command);
+        parsed.args = parsed.args.map((arg) => escape.argument(arg, needsDoubleEscapeMetaChars));
+
+        const shellCommand = [parsed.command].concat(parsed.args).join(' ');
+
+        parsed.args = ['/d', '/s', '/c', `"${shellCommand}"`];
+        parsed.command = process.env.comspec || 'cmd.exe';
+        parsed.options.windowsVerbatimArguments = true; // Tell node's spawn that the arguments are already escaped
+    }
+
+    return parsed;
+}
+
+function parse(command, args, options) {
+    // Normalize arguments, similar to nodejs
+    if (args && !Array.isArray(args)) {
+        options = args;
+        args = null;
+    }
+
+    args = args ? args.slice(0) : []; // Clone array to avoid changing the original
+    options = Object.assign({}, options); // Clone object to avoid changing the original
+
+    // Build our parsed object
+    const parsed = {
+        command,
+        args,
+        options,
+        file: undefined,
+        original: {
+            command,
+            args,
+        },
+    };
+
+    // Delegate further parsing to shell or non-shell
+    return options.shell ? parsed : parseNonShell(parsed);
+}
+
+module.exports = parse;
+
+
+/***/ }),
+
+/***/ 4274:
+/***/ ((module) => {
+
+"use strict";
+
+
+// See http://www.robvanderwoude.com/escapechars.php
+const metaCharsRegExp = /([()\][%!^"`<>&|;, *?])/g;
+
+function escapeCommand(arg) {
+    // Escape meta chars
+    arg = arg.replace(metaCharsRegExp, '^$1');
+
+    return arg;
+}
+
+function escapeArgument(arg, doubleEscapeMetaChars) {
+    // Convert to string
+    arg = `${arg}`;
+
+    // Algorithm below is based on https://qntm.org/cmd
+
+    // Sequence of backslashes followed by a double quote:
+    // double up all the backslashes and escape the double quote
+    arg = arg.replace(/(\\*)"/g, '$1$1\\"');
+
+    // Sequence of backslashes followed by the end of the string
+    // (which will become a double quote later):
+    // double up all the backslashes
+    arg = arg.replace(/(\\*)$/, '$1$1');
+
+    // All other backslashes occur literally
+
+    // Quote the whole thing:
+    arg = `"${arg}"`;
+
+    // Escape meta chars
+    arg = arg.replace(metaCharsRegExp, '^$1');
+
+    // Double escape meta chars if necessary
+    if (doubleEscapeMetaChars) {
+        arg = arg.replace(metaCharsRegExp, '^$1');
+    }
+
+    return arg;
+}
+
+module.exports.command = escapeCommand;
+module.exports.argument = escapeArgument;
+
+
+/***/ }),
+
+/***/ 1252:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+const fs = __webpack_require__(5747);
+const shebangCommand = __webpack_require__(7032);
+
+function readShebang(command) {
+    // Read the first 150 bytes from the file
+    const size = 150;
+    const buffer = Buffer.alloc(size);
+
+    let fd;
+
+    try {
+        fd = fs.openSync(command, 'r');
+        fs.readSync(fd, buffer, 0, size, 0);
+        fs.closeSync(fd);
+    } catch (e) { /* Empty */ }
+
+    // Attempt to extract shebang (null is returned if not a shebang)
+    return shebangCommand(buffer.toString());
+}
+
+module.exports = readShebang;
+
+
+/***/ }),
+
+/***/ 7274:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+const path = __webpack_require__(5622);
+const which = __webpack_require__(4207);
+const getPathKey = __webpack_require__(9060);
+
+function resolveCommandAttempt(parsed, withoutPathExt) {
+    const env = parsed.options.env || process.env;
+    const cwd = process.cwd();
+    const hasCustomCwd = parsed.options.cwd != null;
+    // Worker threads do not have process.chdir()
+    const shouldSwitchCwd = hasCustomCwd && process.chdir !== undefined && !process.chdir.disabled;
+
+    // If a custom `cwd` was specified, we need to change the process cwd
+    // because `which` will do stat calls but does not support a custom cwd
+    if (shouldSwitchCwd) {
+        try {
+            process.chdir(parsed.options.cwd);
+        } catch (err) {
+            /* Empty */
+        }
+    }
+
+    let resolved;
+
+    try {
+        resolved = which.sync(parsed.command, {
+            path: env[getPathKey({ env })],
+            pathExt: withoutPathExt ? path.delimiter : undefined,
+        });
+    } catch (e) {
+        /* Empty */
+    } finally {
+        if (shouldSwitchCwd) {
+            process.chdir(cwd);
+        }
+    }
+
+    // If we successfully resolved, ensure that an absolute path is returned
+    // Note that when a custom `cwd` was used, we need to resolve to an absolute path based on it
+    if (resolved) {
+        resolved = path.resolve(hasCustomCwd ? parsed.options.cwd : '', resolved);
+    }
+
+    return resolved;
+}
+
+function resolveCommand(parsed) {
+    return resolveCommandAttempt(parsed) || resolveCommandAttempt(parsed, true);
+}
+
+module.exports = resolveCommand;
+
+
+/***/ }),
+
+/***/ 9060:
+/***/ ((module) => {
+
+"use strict";
+
+
+const pathKey = (options = {}) => {
+	const environment = options.env || process.env;
+	const platform = options.platform || process.platform;
+
+	if (platform !== 'win32') {
+		return 'PATH';
+	}
+
+	return Object.keys(environment).reverse().find(key => key.toUpperCase() === 'PATH') || 'Path';
+};
+
+module.exports = pathKey;
+// TODO: Remove this for the next major release
+module.exports.default = pathKey;
+
+
+/***/ }),
+
 /***/ 8932:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -8727,6 +9712,167 @@ module.exports = function isGlob(str, options) {
   }
   return false;
 };
+
+
+/***/ }),
+
+/***/ 7126:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var fs = __webpack_require__(5747)
+var core
+if (process.platform === 'win32' || global.TESTING_WINDOWS) {
+  core = __webpack_require__(2001)
+} else {
+  core = __webpack_require__(9728)
+}
+
+module.exports = isexe
+isexe.sync = sync
+
+function isexe (path, options, cb) {
+  if (typeof options === 'function') {
+    cb = options
+    options = {}
+  }
+
+  if (!cb) {
+    if (typeof Promise !== 'function') {
+      throw new TypeError('callback not provided')
+    }
+
+    return new Promise(function (resolve, reject) {
+      isexe(path, options || {}, function (er, is) {
+        if (er) {
+          reject(er)
+        } else {
+          resolve(is)
+        }
+      })
+    })
+  }
+
+  core(path, options || {}, function (er, is) {
+    // ignore EACCES because that just means we aren't allowed to run it
+    if (er) {
+      if (er.code === 'EACCES' || options && options.ignoreErrors) {
+        er = null
+        is = false
+      }
+    }
+    cb(er, is)
+  })
+}
+
+function sync (path, options) {
+  // my kingdom for a filtered catch
+  try {
+    return core.sync(path, options || {})
+  } catch (er) {
+    if (options && options.ignoreErrors || er.code === 'EACCES') {
+      return false
+    } else {
+      throw er
+    }
+  }
+}
+
+
+/***/ }),
+
+/***/ 9728:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+module.exports = isexe
+isexe.sync = sync
+
+var fs = __webpack_require__(5747)
+
+function isexe (path, options, cb) {
+  fs.stat(path, function (er, stat) {
+    cb(er, er ? false : checkStat(stat, options))
+  })
+}
+
+function sync (path, options) {
+  return checkStat(fs.statSync(path), options)
+}
+
+function checkStat (stat, options) {
+  return stat.isFile() && checkMode(stat, options)
+}
+
+function checkMode (stat, options) {
+  var mod = stat.mode
+  var uid = stat.uid
+  var gid = stat.gid
+
+  var myUid = options.uid !== undefined ?
+    options.uid : process.getuid && process.getuid()
+  var myGid = options.gid !== undefined ?
+    options.gid : process.getgid && process.getgid()
+
+  var u = parseInt('100', 8)
+  var g = parseInt('010', 8)
+  var o = parseInt('001', 8)
+  var ug = u | g
+
+  var ret = (mod & o) ||
+    (mod & g) && gid === myGid ||
+    (mod & u) && uid === myUid ||
+    (mod & ug) && myUid === 0
+
+  return ret
+}
+
+
+/***/ }),
+
+/***/ 2001:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+module.exports = isexe
+isexe.sync = sync
+
+var fs = __webpack_require__(5747)
+
+function checkPathExt (path, options) {
+  var pathext = options.pathExt !== undefined ?
+    options.pathExt : process.env.PATHEXT
+
+  if (!pathext) {
+    return true
+  }
+
+  pathext = pathext.split(';')
+  if (pathext.indexOf('') !== -1) {
+    return true
+  }
+  for (var i = 0; i < pathext.length; i++) {
+    var p = pathext[i].toLowerCase()
+    if (p && path.substr(-p.length).toLowerCase() === p) {
+      return true
+    }
+  }
+  return false
+}
+
+function checkStat (stat, path, options) {
+  if (!stat.isSymbolicLink() && !stat.isFile()) {
+    return false
+  }
+  return checkPathExt(path, options)
+}
+
+function isexe (path, options, cb) {
+  fs.stat(path, function (er, stat) {
+    cb(er, er ? false : checkStat(stat, path, options))
+  })
+}
+
+function sync (path, options) {
+  return checkStat(fs.statSync(path), path, options)
+}
 
 
 /***/ }),
@@ -15856,6 +17002,43 @@ module.exports = validRange
 
 /***/ }),
 
+/***/ 7032:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+const shebangRegex = __webpack_require__(2638);
+
+module.exports = (string = '') => {
+	const match = string.match(shebangRegex);
+
+	if (!match) {
+		return null;
+	}
+
+	const [path, argument] = match[0].replace(/#! ?/, '').split(' ');
+	const binary = path.split('/').pop();
+
+	if (binary === 'env') {
+		return argument;
+	}
+
+	return argument ? `${binary} ${argument}` : binary;
+};
+
+
+/***/ }),
+
+/***/ 2638:
+/***/ ((module) => {
+
+"use strict";
+
+module.exports = /^#!(.*)/;
+
+
+/***/ }),
+
 /***/ 4111:
 /***/ ((module) => {
 
@@ -15871,6 +17054,58 @@ module.exports = path => {
 
 	return path.replace(/\\/g, '/');
 };
+
+
+/***/ }),
+
+/***/ 9453:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+exports.__esModule = true;
+function parseArgsStringToArgv(value, env, file) {
+    // ([^\s'"]([^\s'"]*(['"])([^\3]*?)\3)+[^\s'"]*) Matches nested quotes until the first space outside of quotes
+    // [^\s'"]+ or Match if not a space ' or "
+    // (['"])([^\5]*?)\5 or Match "quoted text" without quotes
+    // `\3` and `\5` are a backreference to the quote style (' or ") captured
+    var myRegexp = /([^\s'"]([^\s'"]*(['"])([^\3]*?)\3)+[^\s'"]*)|[^\s'"]+|(['"])([^\5]*?)\5/gi;
+    var myString = value;
+    var myArray = [];
+    if (env) {
+        myArray.push(env);
+    }
+    if (file) {
+        myArray.push(file);
+    }
+    var match;
+    do {
+        // Each call to exec returns the next regex match as an array
+        match = myRegexp.exec(myString);
+        if (match !== null) {
+            // Index 1 in the array is the captured group if it exists
+            // Index 0 is the matched text, which we use if no captured group exists
+            myArray.push(firstString(match[1], match[6], match[0]));
+        }
+    } while (match !== null);
+    return myArray;
+}
+exports.default = parseArgsStringToArgv;
+exports.parseArgsStringToArgv = parseArgsStringToArgv;
+// Accepts any number of arguments, and returns the first one that is a string
+// (even an empty string)
+function firstString() {
+    var args = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        args[_i] = arguments[_i];
+    }
+    for (var i = 0; i < args.length; i++) {
+        var arg = args[i];
+        if (typeof arg === "string") {
+            return arg;
+        }
+    }
+}
 
 
 /***/ }),
@@ -16477,6 +17712,400 @@ exports.debug = debug; // for test
 
 /***/ }),
 
+/***/ 4919:
+/***/ (function(module) {
+
+(function (global, factory) {
+	 true ? module.exports = factory() :
+	0;
+}(this, (function () { 'use strict';
+
+/* !
+ * type-detect
+ * Copyright(c) 2013 jake luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+var promiseExists = typeof Promise === 'function';
+
+/* eslint-disable no-undef */
+var globalObject = typeof self === 'object' ? self : global; // eslint-disable-line id-blacklist
+
+var symbolExists = typeof Symbol !== 'undefined';
+var mapExists = typeof Map !== 'undefined';
+var setExists = typeof Set !== 'undefined';
+var weakMapExists = typeof WeakMap !== 'undefined';
+var weakSetExists = typeof WeakSet !== 'undefined';
+var dataViewExists = typeof DataView !== 'undefined';
+var symbolIteratorExists = symbolExists && typeof Symbol.iterator !== 'undefined';
+var symbolToStringTagExists = symbolExists && typeof Symbol.toStringTag !== 'undefined';
+var setEntriesExists = setExists && typeof Set.prototype.entries === 'function';
+var mapEntriesExists = mapExists && typeof Map.prototype.entries === 'function';
+var setIteratorPrototype = setEntriesExists && Object.getPrototypeOf(new Set().entries());
+var mapIteratorPrototype = mapEntriesExists && Object.getPrototypeOf(new Map().entries());
+var arrayIteratorExists = symbolIteratorExists && typeof Array.prototype[Symbol.iterator] === 'function';
+var arrayIteratorPrototype = arrayIteratorExists && Object.getPrototypeOf([][Symbol.iterator]());
+var stringIteratorExists = symbolIteratorExists && typeof String.prototype[Symbol.iterator] === 'function';
+var stringIteratorPrototype = stringIteratorExists && Object.getPrototypeOf(''[Symbol.iterator]());
+var toStringLeftSliceLength = 8;
+var toStringRightSliceLength = -1;
+/**
+ * ### typeOf (obj)
+ *
+ * Uses `Object.prototype.toString` to determine the type of an object,
+ * normalising behaviour across engine versions & well optimised.
+ *
+ * @param {Mixed} object
+ * @return {String} object type
+ * @api public
+ */
+function typeDetect(obj) {
+  /* ! Speed optimisation
+   * Pre:
+   *   string literal     x 3,039,035 ops/sec ±1.62% (78 runs sampled)
+   *   boolean literal    x 1,424,138 ops/sec ±4.54% (75 runs sampled)
+   *   number literal     x 1,653,153 ops/sec ±1.91% (82 runs sampled)
+   *   undefined          x 9,978,660 ops/sec ±1.92% (75 runs sampled)
+   *   function           x 2,556,769 ops/sec ±1.73% (77 runs sampled)
+   * Post:
+   *   string literal     x 38,564,796 ops/sec ±1.15% (79 runs sampled)
+   *   boolean literal    x 31,148,940 ops/sec ±1.10% (79 runs sampled)
+   *   number literal     x 32,679,330 ops/sec ±1.90% (78 runs sampled)
+   *   undefined          x 32,363,368 ops/sec ±1.07% (82 runs sampled)
+   *   function           x 31,296,870 ops/sec ±0.96% (83 runs sampled)
+   */
+  var typeofObj = typeof obj;
+  if (typeofObj !== 'object') {
+    return typeofObj;
+  }
+
+  /* ! Speed optimisation
+   * Pre:
+   *   null               x 28,645,765 ops/sec ±1.17% (82 runs sampled)
+   * Post:
+   *   null               x 36,428,962 ops/sec ±1.37% (84 runs sampled)
+   */
+  if (obj === null) {
+    return 'null';
+  }
+
+  /* ! Spec Conformance
+   * Test: `Object.prototype.toString.call(window)``
+   *  - Node === "[object global]"
+   *  - Chrome === "[object global]"
+   *  - Firefox === "[object Window]"
+   *  - PhantomJS === "[object Window]"
+   *  - Safari === "[object Window]"
+   *  - IE 11 === "[object Window]"
+   *  - IE Edge === "[object Window]"
+   * Test: `Object.prototype.toString.call(this)``
+   *  - Chrome Worker === "[object global]"
+   *  - Firefox Worker === "[object DedicatedWorkerGlobalScope]"
+   *  - Safari Worker === "[object DedicatedWorkerGlobalScope]"
+   *  - IE 11 Worker === "[object WorkerGlobalScope]"
+   *  - IE Edge Worker === "[object WorkerGlobalScope]"
+   */
+  if (obj === globalObject) {
+    return 'global';
+  }
+
+  /* ! Speed optimisation
+   * Pre:
+   *   array literal      x 2,888,352 ops/sec ±0.67% (82 runs sampled)
+   * Post:
+   *   array literal      x 22,479,650 ops/sec ±0.96% (81 runs sampled)
+   */
+  if (
+    Array.isArray(obj) &&
+    (symbolToStringTagExists === false || !(Symbol.toStringTag in obj))
+  ) {
+    return 'Array';
+  }
+
+  // Not caching existence of `window` and related properties due to potential
+  // for `window` to be unset before tests in quasi-browser environments.
+  if (typeof window === 'object' && window !== null) {
+    /* ! Spec Conformance
+     * (https://html.spec.whatwg.org/multipage/browsers.html#location)
+     * WhatWG HTML$7.7.3 - The `Location` interface
+     * Test: `Object.prototype.toString.call(window.location)``
+     *  - IE <=11 === "[object Object]"
+     *  - IE Edge <=13 === "[object Object]"
+     */
+    if (typeof window.location === 'object' && obj === window.location) {
+      return 'Location';
+    }
+
+    /* ! Spec Conformance
+     * (https://html.spec.whatwg.org/#document)
+     * WhatWG HTML$3.1.1 - The `Document` object
+     * Note: Most browsers currently adher to the W3C DOM Level 2 spec
+     *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-26809268)
+     *       which suggests that browsers should use HTMLTableCellElement for
+     *       both TD and TH elements. WhatWG separates these.
+     *       WhatWG HTML states:
+     *         > For historical reasons, Window objects must also have a
+     *         > writable, configurable, non-enumerable property named
+     *         > HTMLDocument whose value is the Document interface object.
+     * Test: `Object.prototype.toString.call(document)``
+     *  - Chrome === "[object HTMLDocument]"
+     *  - Firefox === "[object HTMLDocument]"
+     *  - Safari === "[object HTMLDocument]"
+     *  - IE <=10 === "[object Document]"
+     *  - IE 11 === "[object HTMLDocument]"
+     *  - IE Edge <=13 === "[object HTMLDocument]"
+     */
+    if (typeof window.document === 'object' && obj === window.document) {
+      return 'Document';
+    }
+
+    if (typeof window.navigator === 'object') {
+      /* ! Spec Conformance
+       * (https://html.spec.whatwg.org/multipage/webappapis.html#mimetypearray)
+       * WhatWG HTML$8.6.1.5 - Plugins - Interface MimeTypeArray
+       * Test: `Object.prototype.toString.call(navigator.mimeTypes)``
+       *  - IE <=10 === "[object MSMimeTypesCollection]"
+       */
+      if (typeof window.navigator.mimeTypes === 'object' &&
+          obj === window.navigator.mimeTypes) {
+        return 'MimeTypeArray';
+      }
+
+      /* ! Spec Conformance
+       * (https://html.spec.whatwg.org/multipage/webappapis.html#pluginarray)
+       * WhatWG HTML$8.6.1.5 - Plugins - Interface PluginArray
+       * Test: `Object.prototype.toString.call(navigator.plugins)``
+       *  - IE <=10 === "[object MSPluginsCollection]"
+       */
+      if (typeof window.navigator.plugins === 'object' &&
+          obj === window.navigator.plugins) {
+        return 'PluginArray';
+      }
+    }
+
+    if ((typeof window.HTMLElement === 'function' ||
+        typeof window.HTMLElement === 'object') &&
+        obj instanceof window.HTMLElement) {
+      /* ! Spec Conformance
+      * (https://html.spec.whatwg.org/multipage/webappapis.html#pluginarray)
+      * WhatWG HTML$4.4.4 - The `blockquote` element - Interface `HTMLQuoteElement`
+      * Test: `Object.prototype.toString.call(document.createElement('blockquote'))``
+      *  - IE <=10 === "[object HTMLBlockElement]"
+      */
+      if (obj.tagName === 'BLOCKQUOTE') {
+        return 'HTMLQuoteElement';
+      }
+
+      /* ! Spec Conformance
+       * (https://html.spec.whatwg.org/#htmltabledatacellelement)
+       * WhatWG HTML$4.9.9 - The `td` element - Interface `HTMLTableDataCellElement`
+       * Note: Most browsers currently adher to the W3C DOM Level 2 spec
+       *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-82915075)
+       *       which suggests that browsers should use HTMLTableCellElement for
+       *       both TD and TH elements. WhatWG separates these.
+       * Test: Object.prototype.toString.call(document.createElement('td'))
+       *  - Chrome === "[object HTMLTableCellElement]"
+       *  - Firefox === "[object HTMLTableCellElement]"
+       *  - Safari === "[object HTMLTableCellElement]"
+       */
+      if (obj.tagName === 'TD') {
+        return 'HTMLTableDataCellElement';
+      }
+
+      /* ! Spec Conformance
+       * (https://html.spec.whatwg.org/#htmltableheadercellelement)
+       * WhatWG HTML$4.9.9 - The `td` element - Interface `HTMLTableHeaderCellElement`
+       * Note: Most browsers currently adher to the W3C DOM Level 2 spec
+       *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-82915075)
+       *       which suggests that browsers should use HTMLTableCellElement for
+       *       both TD and TH elements. WhatWG separates these.
+       * Test: Object.prototype.toString.call(document.createElement('th'))
+       *  - Chrome === "[object HTMLTableCellElement]"
+       *  - Firefox === "[object HTMLTableCellElement]"
+       *  - Safari === "[object HTMLTableCellElement]"
+       */
+      if (obj.tagName === 'TH') {
+        return 'HTMLTableHeaderCellElement';
+      }
+    }
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   Float64Array       x 625,644 ops/sec ±1.58% (80 runs sampled)
+  *   Float32Array       x 1,279,852 ops/sec ±2.91% (77 runs sampled)
+  *   Uint32Array        x 1,178,185 ops/sec ±1.95% (83 runs sampled)
+  *   Uint16Array        x 1,008,380 ops/sec ±2.25% (80 runs sampled)
+  *   Uint8Array         x 1,128,040 ops/sec ±2.11% (81 runs sampled)
+  *   Int32Array         x 1,170,119 ops/sec ±2.88% (80 runs sampled)
+  *   Int16Array         x 1,176,348 ops/sec ±5.79% (86 runs sampled)
+  *   Int8Array          x 1,058,707 ops/sec ±4.94% (77 runs sampled)
+  *   Uint8ClampedArray  x 1,110,633 ops/sec ±4.20% (80 runs sampled)
+  * Post:
+  *   Float64Array       x 7,105,671 ops/sec ±13.47% (64 runs sampled)
+  *   Float32Array       x 5,887,912 ops/sec ±1.46% (82 runs sampled)
+  *   Uint32Array        x 6,491,661 ops/sec ±1.76% (79 runs sampled)
+  *   Uint16Array        x 6,559,795 ops/sec ±1.67% (82 runs sampled)
+  *   Uint8Array         x 6,463,966 ops/sec ±1.43% (85 runs sampled)
+  *   Int32Array         x 5,641,841 ops/sec ±3.49% (81 runs sampled)
+  *   Int16Array         x 6,583,511 ops/sec ±1.98% (80 runs sampled)
+  *   Int8Array          x 6,606,078 ops/sec ±1.74% (81 runs sampled)
+  *   Uint8ClampedArray  x 6,602,224 ops/sec ±1.77% (83 runs sampled)
+  */
+  var stringTag = (symbolToStringTagExists && obj[Symbol.toStringTag]);
+  if (typeof stringTag === 'string') {
+    return stringTag;
+  }
+
+  var objPrototype = Object.getPrototypeOf(obj);
+  /* ! Speed optimisation
+  * Pre:
+  *   regex literal      x 1,772,385 ops/sec ±1.85% (77 runs sampled)
+  *   regex constructor  x 2,143,634 ops/sec ±2.46% (78 runs sampled)
+  * Post:
+  *   regex literal      x 3,928,009 ops/sec ±0.65% (78 runs sampled)
+  *   regex constructor  x 3,931,108 ops/sec ±0.58% (84 runs sampled)
+  */
+  if (objPrototype === RegExp.prototype) {
+    return 'RegExp';
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   date               x 2,130,074 ops/sec ±4.42% (68 runs sampled)
+  * Post:
+  *   date               x 3,953,779 ops/sec ±1.35% (77 runs sampled)
+  */
+  if (objPrototype === Date.prototype) {
+    return 'Date';
+  }
+
+  /* ! Spec Conformance
+   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-promise.prototype-@@tostringtag)
+   * ES6$25.4.5.4 - Promise.prototype[@@toStringTag] should be "Promise":
+   * Test: `Object.prototype.toString.call(Promise.resolve())``
+   *  - Chrome <=47 === "[object Object]"
+   *  - Edge <=20 === "[object Object]"
+   *  - Firefox 29-Latest === "[object Promise]"
+   *  - Safari 7.1-Latest === "[object Promise]"
+   */
+  if (promiseExists && objPrototype === Promise.prototype) {
+    return 'Promise';
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   set                x 2,222,186 ops/sec ±1.31% (82 runs sampled)
+  * Post:
+  *   set                x 4,545,879 ops/sec ±1.13% (83 runs sampled)
+  */
+  if (setExists && objPrototype === Set.prototype) {
+    return 'Set';
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   map                x 2,396,842 ops/sec ±1.59% (81 runs sampled)
+  * Post:
+  *   map                x 4,183,945 ops/sec ±6.59% (82 runs sampled)
+  */
+  if (mapExists && objPrototype === Map.prototype) {
+    return 'Map';
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   weakset            x 1,323,220 ops/sec ±2.17% (76 runs sampled)
+  * Post:
+  *   weakset            x 4,237,510 ops/sec ±2.01% (77 runs sampled)
+  */
+  if (weakSetExists && objPrototype === WeakSet.prototype) {
+    return 'WeakSet';
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   weakmap            x 1,500,260 ops/sec ±2.02% (78 runs sampled)
+  * Post:
+  *   weakmap            x 3,881,384 ops/sec ±1.45% (82 runs sampled)
+  */
+  if (weakMapExists && objPrototype === WeakMap.prototype) {
+    return 'WeakMap';
+  }
+
+  /* ! Spec Conformance
+   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-dataview.prototype-@@tostringtag)
+   * ES6$24.2.4.21 - DataView.prototype[@@toStringTag] should be "DataView":
+   * Test: `Object.prototype.toString.call(new DataView(new ArrayBuffer(1)))``
+   *  - Edge <=13 === "[object Object]"
+   */
+  if (dataViewExists && objPrototype === DataView.prototype) {
+    return 'DataView';
+  }
+
+  /* ! Spec Conformance
+   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%mapiteratorprototype%-@@tostringtag)
+   * ES6$23.1.5.2.2 - %MapIteratorPrototype%[@@toStringTag] should be "Map Iterator":
+   * Test: `Object.prototype.toString.call(new Map().entries())``
+   *  - Edge <=13 === "[object Object]"
+   */
+  if (mapExists && objPrototype === mapIteratorPrototype) {
+    return 'Map Iterator';
+  }
+
+  /* ! Spec Conformance
+   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%setiteratorprototype%-@@tostringtag)
+   * ES6$23.2.5.2.2 - %SetIteratorPrototype%[@@toStringTag] should be "Set Iterator":
+   * Test: `Object.prototype.toString.call(new Set().entries())``
+   *  - Edge <=13 === "[object Object]"
+   */
+  if (setExists && objPrototype === setIteratorPrototype) {
+    return 'Set Iterator';
+  }
+
+  /* ! Spec Conformance
+   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%arrayiteratorprototype%-@@tostringtag)
+   * ES6$22.1.5.2.2 - %ArrayIteratorPrototype%[@@toStringTag] should be "Array Iterator":
+   * Test: `Object.prototype.toString.call([][Symbol.iterator]())``
+   *  - Edge <=13 === "[object Object]"
+   */
+  if (arrayIteratorExists && objPrototype === arrayIteratorPrototype) {
+    return 'Array Iterator';
+  }
+
+  /* ! Spec Conformance
+   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%stringiteratorprototype%-@@tostringtag)
+   * ES6$21.1.5.2.2 - %StringIteratorPrototype%[@@toStringTag] should be "String Iterator":
+   * Test: `Object.prototype.toString.call(''[Symbol.iterator]())``
+   *  - Edge <=13 === "[object Object]"
+   */
+  if (stringIteratorExists && objPrototype === stringIteratorPrototype) {
+    return 'String Iterator';
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   object from null   x 2,424,320 ops/sec ±1.67% (76 runs sampled)
+  * Post:
+  *   object from null   x 5,838,000 ops/sec ±0.99% (84 runs sampled)
+  */
+  if (objPrototype === null) {
+    return 'Object';
+  }
+
+  return Object
+    .prototype
+    .toString
+    .call(obj)
+    .slice(toStringLeftSliceLength, toStringRightSliceLength);
+}
+
+return typeDetect;
+
+})));
+
+
+/***/ }),
+
 /***/ 5030:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -16499,6 +18128,138 @@ function getUserAgent() {
 
 exports.getUserAgent = getUserAgent;
 //# sourceMappingURL=index.js.map
+
+
+/***/ }),
+
+/***/ 4207:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+const isWindows = process.platform === 'win32' ||
+    process.env.OSTYPE === 'cygwin' ||
+    process.env.OSTYPE === 'msys'
+
+const path = __webpack_require__(5622)
+const COLON = isWindows ? ';' : ':'
+const isexe = __webpack_require__(7126)
+
+const getNotFoundError = (cmd) =>
+  Object.assign(new Error(`not found: ${cmd}`), { code: 'ENOENT' })
+
+const getPathInfo = (cmd, opt) => {
+  const colon = opt.colon || COLON
+
+  // If it has a slash, then we don't bother searching the pathenv.
+  // just check the file itself, and that's it.
+  const pathEnv = cmd.match(/\//) || isWindows && cmd.match(/\\/) ? ['']
+    : (
+      [
+        // windows always checks the cwd first
+        ...(isWindows ? [process.cwd()] : []),
+        ...(opt.path || process.env.PATH ||
+          /* istanbul ignore next: very unusual */ '').split(colon),
+      ]
+    )
+  const pathExtExe = isWindows
+    ? opt.pathExt || process.env.PATHEXT || '.EXE;.CMD;.BAT;.COM'
+    : ''
+  const pathExt = isWindows ? pathExtExe.split(colon) : ['']
+
+  if (isWindows) {
+    if (cmd.indexOf('.') !== -1 && pathExt[0] !== '')
+      pathExt.unshift('')
+  }
+
+  return {
+    pathEnv,
+    pathExt,
+    pathExtExe,
+  }
+}
+
+const which = (cmd, opt, cb) => {
+  if (typeof opt === 'function') {
+    cb = opt
+    opt = {}
+  }
+  if (!opt)
+    opt = {}
+
+  const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt)
+  const found = []
+
+  const step = i => new Promise((resolve, reject) => {
+    if (i === pathEnv.length)
+      return opt.all && found.length ? resolve(found)
+        : reject(getNotFoundError(cmd))
+
+    const ppRaw = pathEnv[i]
+    const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw
+
+    const pCmd = path.join(pathPart, cmd)
+    const p = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd
+      : pCmd
+
+    resolve(subStep(p, i, 0))
+  })
+
+  const subStep = (p, i, ii) => new Promise((resolve, reject) => {
+    if (ii === pathExt.length)
+      return resolve(step(i + 1))
+    const ext = pathExt[ii]
+    isexe(p + ext, { pathExt: pathExtExe }, (er, is) => {
+      if (!er && is) {
+        if (opt.all)
+          found.push(p + ext)
+        else
+          return resolve(p + ext)
+      }
+      return resolve(subStep(p, i, ii + 1))
+    })
+  })
+
+  return cb ? step(0).then(res => cb(null, res), cb) : step(0)
+}
+
+const whichSync = (cmd, opt) => {
+  opt = opt || {}
+
+  const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt)
+  const found = []
+
+  for (let i = 0; i < pathEnv.length; i ++) {
+    const ppRaw = pathEnv[i]
+    const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw
+
+    const pCmd = path.join(pathPart, cmd)
+    const p = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd
+      : pCmd
+
+    for (let j = 0; j < pathExt.length; j ++) {
+      const cur = p + pathExt[j]
+      try {
+        const is = isexe.sync(cur, { pathExt: pathExtExe })
+        if (is) {
+          if (opt.all)
+            found.push(cur)
+          else
+            return cur
+        }
+      } catch (ex) {}
+    }
+  }
+
+  if (opt.all && found.length)
+    return found
+
+  if (opt.nothrow)
+    return null
+
+  throw getNotFoundError(cmd)
+}
+
+module.exports = which
+which.sync = whichSync
 
 
 /***/ }),
@@ -17006,6 +18767,14 @@ module.exports = eval("require")("encoding");
 
 "use strict";
 module.exports = require("assert");;
+
+/***/ }),
+
+/***/ 3129:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("child_process");;
 
 /***/ }),
 

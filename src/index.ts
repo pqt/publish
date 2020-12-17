@@ -152,10 +152,10 @@ export async function run(): Promise<void> {
 
       debug('Starting to create status checks for each package that needs to be published');
 
-      const publishPackages = packageManifests.map(async (manifestPath) => {
+      const packagesToPublish = packageManifests.map(async (manifestPath) => {
         const manifest = await npm.readManifest(manifestPath);
 
-        return await client.repos.createCommitStatus({
+        await client.repos.createCommitStatus({
           owner,
           repo,
           sha: commitHash,
@@ -165,12 +165,22 @@ export async function run(): Promise<void> {
         });
 
         // try {
+        await npm.publish(manifestPath);
+
+        await client.repos.createCommitStatus({
+          owner,
+          repo,
+          sha: commitHash,
+          state: 'success',
+          context: `Publish ${manifest.name}`,
+          description: `v0.0.0-${commitShortHash}`,
+        });
         // } catch (error) {
-        //   console.log(error);
+        //   throw error;
         // }
       });
 
-      for await (const item of publishPackages) {
+      for await (const item of packagesToPublish) {
         console.log(item);
       }
 

@@ -1,5 +1,7 @@
+import ezSpawn from '@jsdevtools/ez-spawn';
 import { promises as fs } from 'fs';
 import { SemVer } from 'semver';
+import { dirname, resolve } from 'path';
 
 /**
  * Retrieve the absolute path for the `.npmrc` file.
@@ -84,9 +86,10 @@ export async function readManifest(path: string) {
 /**
  * Publish a new version of a package to the registry
  */
-// export async function publish() {
-//   try {
-//   } catch (error) {
-//     throw error;
-//   }
-// }
+export async function publish(path: string) {
+  await ezSpawn.async(['npm', 'publish', '--dry-run'], { cwd: resolve(dirname(path)) });
+  // try {
+  // } catch (error) {
+  //   throw error;
+  // }
+}

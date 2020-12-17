@@ -8,10 +8,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.readManifest = void 0;
+exports.publish = exports.readManifest = void 0;
+const ez_spawn_1 = __importDefault(require("@jsdevtools/ez-spawn"));
 const fs_1 = require("fs");
 const semver_1 = require("semver");
+const path_1 = require("path");
 /**
  * Read package manifest
  */
@@ -64,9 +69,13 @@ exports.readManifest = readManifest;
 /**
  * Publish a new version of a package to the registry
  */
-// export async function publish() {
-//   try {
-//   } catch (error) {
-//     throw error;
-//   }
-// }
+function publish(path) {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield ez_spawn_1.default.async(['npm', 'publish', '--dry-run'], { cwd: path_1.resolve(path_1.dirname(path)) });
+        // try {
+        // } catch (error) {
+        //   throw error;
+        // }
+    });
+}
+exports.publish = publish;
