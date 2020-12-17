@@ -1,60 +1,92 @@
-import * as ezSpawn from '@jsdevtools/ez-spawn';
-import { SemVer } from 'semver';
 import { promises as fs } from 'fs';
-import { dirname } from 'path';
+import { SemVer } from 'semver';
 
-async function getConfigFile() {
+/**
+ * Retrieve the absolute path for the `.npmrc` file.
+ *
+ * IE: /home/runner/.npmrc
+ */
+// export async function getConfigFile() {
+//   try {
+//   } catch (error) {
+//     throw error;
+//   }
+// }
+
+/**
+ * Retrieve the latest published version of a package from the registry.
+ * If no package is published, a version of 0.0.0 will be returned.
+ */
+// export async function getLatestVersion(name: string) {
+//   try {
+//   } catch (error) {
+//     throw error;
+//   }
+// }
+
+interface Manifest {
+  name: string;
+  version: SemVer;
+}
+
+/**
+ * Read package manifest
+ */
+export async function readManifest(path: string) {
+  let json: string;
+
   try {
-    const process = await ezSpawn.async('npm', 'config', 'get', 'userconfig');
-    return process.stdout.trim();
+    json = await fs.readFile(path, 'utf-8');
   } catch (error) {
-    throw 'Unable to determine the NPM config file path.';
+    throw `Unable to read ${path}`;
+  }
+
+  try {
+    const { name, version } = JSON.parse(json) as Record<string, unknown>;
+
+    if (typeof name !== 'string' || name.trim().length === 0) {
+      throw new TypeError('Invalid package name');
+    }
+
+    const manifest: Manifest = {
+      name,
+      version: new SemVer(version as string),
+    };
+
+    // debug && debug("MANIFEST:", manifest);
+    return manifest;
+  } catch (error) {
+    // throw ono(error, `Unable to parse ${path}`);
+    throw `Unable to parse ${path}`;
   }
 }
 
-export const setConfig = async () => {
-  try {
-    const configPath = await getConfigFile();
-    const configDirectory = dirname(configPath);
-    const config = await fs.readFile(configPath, 'utf-8');
-    // Make the directory
-    await fs.mkdir(configDirectory, { recursive: true });
+/**
+ * Read the `.npmrc` file.
+ */
+// export async function readConfig(path: string) {
+//   try {
+//   } catch (error) {
+//     throw error;
+//   }
+// }
 
-    // Write the file
-    await fs.writeFile(configPath, '//registry.npmjs.org/:_authToken=${NPM_TOKEN}');
-  } catch (error) {
-    console.log(error);
-  }
-};
+/**
+ * Update the `.npmrc` file contents for the GitHub Action
+ */
+// export async function updateConfig(path: string, registry: URL) {
+//   try {
+//   } catch (error) {
+//     throw error;
+//   }
+// }
 
-export const getPublishedVersion = async (name: string): Promise<SemVer> => {
-  try {
-    const { stdout } = await ezSpawn.async(['npm', 'view', name, 'version']);
-
-    /**
-     * The latest version published on NPM
-     */
-    const currentNpmVersionString = stdout.trim();
-
-    /**
-     * Parse/validate the version number
-     */
-    return new SemVer(currentNpmVersionString);
-  } catch (error) {
-    if (error && error.toString().includes('E404')) {
-      // options.debug(`The latest version of ${name} is at v0.0.0, as it was never published.`);
-      return new SemVer('0.0.0');
-    }
-    return new SemVer('0.0.0');
-  }
-};
-
-export const publishPackage = async (name: string, version: SemVer) => {
-  try {
-    await setConfig();
-    // throw `Attempted to publish ${name} @${version}`;
-    const { stdout } = await ezSpawn.async(['npm', 'publish', '--dry-run']);
-  } catch (error) {
-    throw error;
-  }
-};
+/**
+ * Publish a new version of a package to the registry
+ */
+// export async function publish() {
+//   try {
+//   } catch (error) {
+//     throw error;
+//   }
+// }

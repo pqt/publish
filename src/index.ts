@@ -1,9 +1,9 @@
 import { debug as log, endGroup, getInput, setFailed, startGroup } from '@actions/core';
 import { context, getOctokit } from '@actions/github';
 import globby from 'globby';
-import { SemVer } from 'semver';
+// import { SemVer } from 'semver';
 import * as npm from './utils/npm';
-import { readManifest } from './utils/read-manifest';
+// import { readManifest } from './utils/read-manifest';
 
 /**
  * Prints errors to the GitHub Actions console
@@ -75,7 +75,8 @@ export async function run(): Promise<void> {
      */
     const repo = context.payload.repository.name;
     const owner = context.payload.repository.owner.login;
-    const sha: string = context.payload.after;
+    const commitHash: string = context.payload.after;
+    const commitShortHash = commitHash.slice(0, 7);
 
     /**
      * Kill the action if the GITHUB_WORKSPACE environment variable is not set
@@ -150,59 +151,82 @@ export async function run(): Promise<void> {
       }
 
       debug('Starting to create status checks for each package that needs to be published');
-      await Promise.all(
-        packageManifests.map(async (manifest) => {
-          debug(`Reading package manifest in ${manifest}`);
-          const { name, version } = await readManifest(manifest);
-          debug(`Manifest contents`, { name, version });
 
-          debug(`Attempting to create a status check for ${name}`);
-          await client.repos.createCommitStatus({
-            owner,
-            repo,
-            sha,
-            state: 'pending',
-            context: `Publish ${name}`,
-            description: `Starting...`,
-          });
-          debug(`Succesfully created a pending status check for ${name}`);
+      const publishPackages = packageManifests.map(async (manifestPath) => {
+        const manifest = await npm.readManifest(manifestPath);
 
-          debug(`Attempting to find package on NPM`);
-          const published = await npm.getPublishedVersion(name);
-          debug(`Latest published npm version for ${name} is ${published.version}`);
+        await client.repos.createCommitStatus({
+          owner,
+          repo,
+          sha: commitHash,
+          state: 'pending',
+          context: `Publish ${manifest.name}`,
+          description: `Starting...`,
+        });
 
-          try {
-            const newVersion = new SemVer(`0.0.0-${sha.slice(0, 7)}`);
-            await npm.publishPackage(name, newVersion);
+        // try {
+        // } catch (error) {
+        //   console.log(error);
+        // }
+      });
 
-            debug(`Attempting to update status check for ${name} to success state`);
-            await client.repos.createCommitStatus({
-              owner,
-              repo,
-              sha,
-              state: 'success',
-              context: `Publish ${name}`,
-              description: `Published v${version}!`,
-            });
-            debug(`Succesfully updated status check for ${name}`);
-          } catch (error) {
-            const message = error ? error.message : 'Something went wrong';
-            debug('Publishing Error Message', { message });
+      for await (const item of publishPackages) {
+        console.log(item);
+      }
 
-            debug(`Attempting to update status check for ${name} to error state`);
-            await client.repos.createCommitStatus({
-              owner,
-              repo,
-              sha,
-              state: 'error',
-              context: `Publish ${name}`,
-              // description: message,
-              description: 'Failed to publish',
-            });
-            debug(`Succesfully updated status check for ${name}`);
-          }
-        })
-      );
+      // await Promise.all(
+      //   packageManifests.map(async (manifest) => {
+      //     debug(`Reading package manifest in ${manifest}`);
+      //     const { name, version } = await readManifest(manifest);
+      //     debug(`Manifest contents`, { name, version });
+
+      //     debug(`Attempting to create a status check for ${name}`);
+      //     await client.repos.createCommitStatus({
+      //       owner,
+      //       repo,
+      //       sha: commitHash,
+      //       state: 'pending',
+      //       context: `Publish ${name}`,
+      //       description: `Starting...`,
+      //     });
+      //     debug(`Succesfully created a pending status check for ${name}`);
+
+      //     debug(`Attempting to find package on NPM`);
+      //     const published = await npm.getLatestVersion(name);
+      //     debug(`Latest published npm version for ${name} is ${published.version}`);
+
+      //     try {
+      //       const newVersion = new SemVer(`0.0.0-${}`);
+      //       await npm.publish(name, newVersion);
+
+      //       debug(`Attempting to update status check for ${name} to success state`);
+      //       await client.repos.createCommitStatus({
+      //         owner,
+      //         repo,
+      //         sha: commitHash,
+      //         state: 'success',
+      //         context: `Publish ${name}`,
+      //         description: `Published v${version}!`,
+      //       });
+      //       debug(`Succesfully updated status check for ${name}`);
+      //     } catch (error) {
+      //       const message = error ? error.message : 'Something went wrong';
+      //       debug('Publishing Error Message', { message });
+
+      //       debug(`Attempting to update status check for ${name} to error state`);
+      //       await client.repos.createCommitStatus({
+      //         owner,
+      //         repo,
+      //         sha: commitHash,
+      //         state: 'error',
+      //         context: `Publish ${name}`,
+      //         // description: message,
+      //         description: 'Failed to publish',
+      //       });
+      //       debug(`Succesfully updated status check for ${name}`);
+      //     }
+      //   })
+      // );
 
       /**
        * TODO:
