@@ -155,7 +155,7 @@ export async function run(): Promise<void> {
       const publishPackages = packageManifests.map(async (manifestPath) => {
         const manifest = await npm.readManifest(manifestPath);
 
-        await client.repos.createCommitStatus({
+        return await client.repos.createCommitStatus({
           owner,
           repo,
           sha: commitHash,

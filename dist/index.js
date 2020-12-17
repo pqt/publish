@@ -188,7 +188,7 @@ function run() {
                 debug('Starting to create status checks for each package that needs to be published');
                 const publishPackages = packageManifests.map((manifestPath) => __awaiter(this, void 0, void 0, function* () {
                     const manifest = yield npm.readManifest(manifestPath);
-                    yield client.repos.createCommitStatus({
+                    return yield client.repos.createCommitStatus({
                         owner,
                         repo,
                         sha: commitHash,
