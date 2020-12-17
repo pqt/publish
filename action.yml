@@ -4,7 +4,10 @@ author: 'Austin Paquette'
 
 inputs:
   GITHUB_TOKEN:
-    description: 'GitHub authentication token'
+    description: 'GitHub authentication token; available in all GitHub action contexts'
+    required: true
+  NPM_TOKEN:
+    description: 'NPM automation token; the one suitable for CI/CD workflows'
     required: true
 
 runs:

@@ -3,13 +3,22 @@ import { SemVer } from 'semver';
 import { promises as fs } from 'fs';
 import { dirname } from 'path';
 
-export const setConfig = async () => {
+async function getConfigFile() {
   try {
     const process = await ezSpawn.async('npm', 'config', 'get', 'userconfig');
-    const configPath = process.stdout.trim();
+    return process.stdout.trim();
+  } catch (error) {
+    throw 'Unable to determine the NPM config file path.';
+  }
+}
+
+export const setConfig = async () => {
+  try {
+    const configPath = await getConfigFile();
+    const configDirectory = dirname(configPath);
     const config = await fs.readFile(configPath, 'utf-8');
     // Make the directory
-    await fs.mkdir(dirname(configPath), { recursive: true });
+    await fs.mkdir(configDirectory, { recursive: true });
 
     // Write the file
     await fs.writeFile(configPath, '//registry.npmjs.org/:_authToken=${NPM_TOKEN}');

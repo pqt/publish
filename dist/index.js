@@ -310,13 +310,24 @@ const ezSpawn = __importStar(__webpack_require__(7020));
 const semver_1 = __webpack_require__(1383);
 const fs_1 = __webpack_require__(5747);
 const path_1 = __webpack_require__(5622);
+function getConfigFile() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const process = yield ezSpawn.async('npm', 'config', 'get', 'userconfig');
+            return process.stdout.trim();
+        }
+        catch (error) {
+            throw 'Unable to determine the NPM config file path.';
+        }
+    });
+}
 const setConfig = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const process = yield ezSpawn.async('npm', 'config', 'get', 'userconfig');
-        const configPath = process.stdout.trim();
+        const configPath = yield getConfigFile();
+        const configDirectory = path_1.dirname(configPath);
         const config = yield fs_1.promises.readFile(configPath, 'utf-8');
         // Make the directory
-        yield fs_1.promises.mkdir(path_1.dirname(configPath), { recursive: true });
+        yield fs_1.promises.mkdir(configDirectory, { recursive: true });
         // Write the file
         yield fs_1.promises.writeFile(configPath, '//registry.npmjs.org/:_authToken=${NPM_TOKEN}');
     }
