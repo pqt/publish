@@ -87,7 +87,7 @@ export async function readManifest(path: string) {
  * Publish a new version of a package to the registry
  */
 export async function publish(path: string) {
-  await ezSpawn.async(['npm', 'publish', '--dry-run'], { cwd: resolve(dirname(path)) });
+  return await ezSpawn.async(['npm', 'publish', '--dry-run'], { cwd: resolve(dirname(path)) });
   // try {
   // } catch (error) {
   //   throw error;

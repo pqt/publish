@@ -396,7 +396,7 @@ exports.readManifest = readManifest;
  */
 function publish(path) {
     return __awaiter(this, void 0, void 0, function* () {
-        yield ez_spawn_1.default.async(['npm', 'publish', '--dry-run'], { cwd: path_1.resolve(path_1.dirname(path)) });
+        return yield ez_spawn_1.default.async(['npm', 'publish', '--dry-run'], { cwd: path_1.resolve(path_1.dirname(path)) });
         // try {
         // } catch (error) {
         //   throw error;
