@@ -66,6 +66,7 @@ function run() {
             const buildFolder = 'dist';
             const publishCanaryPackages = true;
             const GITHUB_TOKEN = core_1.getInput('GITHUB_TOKEN', { required: true });
+            const NPM_TOKEN = core_1.getInput('NPM_TOKEN', { required: true });
             /**
              * Log the full context for debugging purposes
              */
@@ -305,8 +306,9 @@ const getPublishedVersion = (name) => __awaiter(void 0, void 0, void 0, function
         return new semver_1.SemVer(currentNpmVersionString);
     }
     catch (error) {
+        console.log(typeof error);
+        console.log(error.toString().includes('E404'));
         console.log(error);
-        console.log(error.includes('E404'));
         if (error && error.includes('E404')) {
             // options.debug(`The latest version of ${name} is at v0.0.0, as it was never published.`);
             return new semver_1.SemVer('0.0.0');

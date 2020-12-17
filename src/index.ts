@@ -47,6 +47,7 @@ export async function run(): Promise<void> {
     const buildFolder = 'dist';
     const publishCanaryPackages = true;
     const GITHUB_TOKEN = getInput('GITHUB_TOKEN', { required: true });
+    const NPM_TOKEN = getInput('NPM_TOKEN', { required: true });
 
     /**
      * Log the full context for debugging purposes
