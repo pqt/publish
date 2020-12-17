@@ -32,12 +32,20 @@ exports.publishPackage = exports.getPublishedVersion = exports.setConfig = void 
 const ezSpawn = __importStar(require("@jsdevtools/ez-spawn"));
 const semver_1 = require("semver");
 const fs_1 = require("fs");
+const path_1 = require("path");
 const setConfig = () => __awaiter(void 0, void 0, void 0, function* () {
-    const process = yield ezSpawn.async('npm', 'config', 'get', 'userconfig');
-    const config = yield fs_1.promises.readFile(process.stdout.trim(), 'utf-8');
-    console.log(config);
-    // return process.stdout.trim();
-    // registry.npmjs.org/:_authToken=${NPM_TOKEN}
+    try {
+        const process = yield ezSpawn.async('npm', 'config', 'get', 'userconfig');
+        const configPath = process.stdout.trim();
+        const config = yield fs_1.promises.readFile(configPath, 'utf-8');
+        // Make the directory
+        yield fs_1.promises.mkdir(path_1.dirname(configPath), { recursive: true });
+        // Write the file
+        yield fs_1.promises.writeFile(configPath, '//registry.npmjs.org/:_authToken=${NPM_TOKEN}');
+    }
+    catch (error) {
+        console.log(error);
+    }
 });
 exports.setConfig = setConfig;
 const getPublishedVersion = (name) => __awaiter(void 0, void 0, void 0, function* () {

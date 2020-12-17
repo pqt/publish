@@ -1,13 +1,21 @@
 import * as ezSpawn from '@jsdevtools/ez-spawn';
 import { SemVer } from 'semver';
 import { promises as fs } from 'fs';
+import { dirname } from 'path';
 
 export const setConfig = async () => {
-  const process = await ezSpawn.async('npm', 'config', 'get', 'userconfig');
-  const config = await fs.readFile(process.stdout.trim(), 'utf-8');
-  console.log(config);
-  // return process.stdout.trim();
-  // registry.npmjs.org/:_authToken=${NPM_TOKEN}
+  try {
+    const process = await ezSpawn.async('npm', 'config', 'get', 'userconfig');
+    const configPath = process.stdout.trim();
+    const config = await fs.readFile(configPath, 'utf-8');
+    // Make the directory
+    await fs.mkdir(dirname(configPath), { recursive: true });
+
+    // Write the file
+    await fs.writeFile(configPath, '//registry.npmjs.org/:_authToken=${NPM_TOKEN}');
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 export const getPublishedVersion = async (name: string): Promise<SemVer> => {
