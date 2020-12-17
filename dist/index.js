@@ -169,10 +169,10 @@ function run() {
                         description: `Starting...`,
                     });
                     debug(`Succesfully created a pending status check for ${name}`);
+                    debug(`Attempting to find package on NPM`);
+                    const published = yield npm_1.getPublishedVersion(name);
+                    debug(`Latest published npm version for ${name} is ${published.version}`);
                     try {
-                        debug(`Attempting to find package on NPM`);
-                        const { version } = yield npm_1.getPublishedVersion(name);
-                        debug(`Latest published npm version for ${name} is ${version}`);
                         debug(`Attempting to update status check for ${name} to success state`);
                         yield client.repos.createCommitStatus({
                             owner,

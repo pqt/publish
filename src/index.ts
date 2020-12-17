@@ -164,11 +164,11 @@ export async function run(): Promise<void> {
           });
           debug(`Succesfully created a pending status check for ${name}`);
 
-          try {
-            debug(`Attempting to find package on NPM`);
-            const { version } = await getPublishedVersion(name);
-            debug(`Latest published npm version for ${name} is ${version}`);
+          debug(`Attempting to find package on NPM`);
+          const published = await getPublishedVersion(name);
+          debug(`Latest published npm version for ${name} is ${published.version}`);
 
+          try {
             debug(`Attempting to update status check for ${name} to success state`);
             await client.repos.createCommitStatus({
               owner,
