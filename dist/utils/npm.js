@@ -31,9 +31,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.publishPackage = exports.getPublishedVersion = exports.setConfig = void 0;
 const ezSpawn = __importStar(require("@jsdevtools/ez-spawn"));
 const semver_1 = require("semver");
+const fs_1 = require("fs");
 const setConfig = () => __awaiter(void 0, void 0, void 0, function* () {
     const process = yield ezSpawn.async('npm', 'config', 'get', 'userconfig');
-    console.log(process.stdout.trim());
+    const config = yield fs_1.promises.readFile(process.stdout.trim(), 'utf-8');
+    console.log(config);
     // return process.stdout.trim();
     // registry.npmjs.org/:_authToken=${NPM_TOKEN}
 });

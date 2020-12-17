@@ -308,9 +308,11 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.publishPackage = exports.getPublishedVersion = exports.setConfig = void 0;
 const ezSpawn = __importStar(__webpack_require__(7020));
 const semver_1 = __webpack_require__(1383);
+const fs_1 = __webpack_require__(5747);
 const setConfig = () => __awaiter(void 0, void 0, void 0, function* () {
     const process = yield ezSpawn.async('npm', 'config', 'get', 'userconfig');
-    console.log(process.stdout.trim());
+    const config = yield fs_1.promises.readFile(process.stdout.trim(), 'utf-8');
+    console.log(config);
     // return process.stdout.trim();
     // registry.npmjs.org/:_authToken=${NPM_TOKEN}
 });

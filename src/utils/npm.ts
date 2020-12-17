@@ -1,9 +1,11 @@
 import * as ezSpawn from '@jsdevtools/ez-spawn';
 import { SemVer } from 'semver';
+import { promises as fs } from 'fs';
 
 export const setConfig = async () => {
   const process = await ezSpawn.async('npm', 'config', 'get', 'userconfig');
-  console.log(process.stdout.trim());
+  const config = await fs.readFile(process.stdout.trim(), 'utf-8');
+  console.log(config);
   // return process.stdout.trim();
   // registry.npmjs.org/:_authToken=${NPM_TOKEN}
 };
