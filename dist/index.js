@@ -306,6 +306,7 @@ const getPublishedVersion = (name) => __awaiter(void 0, void 0, void 0, function
     }
     catch (error) {
         console.log(error);
+        console.log(error.includes('E404'));
         if (error && error.includes('E404')) {
             // options.debug(`The latest version of ${name} is at v0.0.0, as it was never published.`);
             return new semver_1.SemVer('0.0.0');
