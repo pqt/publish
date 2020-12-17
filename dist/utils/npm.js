@@ -28,9 +28,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPublishedVersion = void 0;
+exports.publishPackage = exports.getPublishedVersion = exports.setConfig = void 0;
 const ezSpawn = __importStar(require("@jsdevtools/ez-spawn"));
 const semver_1 = require("semver");
+const setConfig = () => __awaiter(void 0, void 0, void 0, function* () {
+    const process = yield ezSpawn.async('npm', 'config', 'get', 'userconfig');
+    console.log(process.stdout.trim());
+    // return process.stdout.trim();
+    // registry.npmjs.org/:_authToken=${NPM_TOKEN}
+});
+exports.setConfig = setConfig;
 const getPublishedVersion = (name) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { stdout } = yield ezSpawn.async(['npm', 'view', name, 'version']);
@@ -52,3 +59,13 @@ const getPublishedVersion = (name) => __awaiter(void 0, void 0, void 0, function
     }
 });
 exports.getPublishedVersion = getPublishedVersion;
+const publishPackage = (name, version) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield exports.setConfig();
+        // const { stdout } = await ezSpawn.async(['npm', 'publish']);
+    }
+    catch (error) {
+        console.log(error);
+    }
+});
+exports.publishPackage = publishPackage;
