@@ -165,7 +165,7 @@ export async function run(): Promise<void> {
         });
 
         // try {
-        await npm.publish(manifestPath);
+        const publish = await npm.publish(manifestPath);
 
         await client.repos.createCommitStatus({
           owner,
@@ -175,6 +175,8 @@ export async function run(): Promise<void> {
           context: `Publish ${manifest.name}`,
           description: `v0.0.0-${commitShortHash}`,
         });
+
+        return publish;
         // } catch (error) {
         //   throw error;
         // }

@@ -197,7 +197,7 @@ function run() {
                         description: `Starting...`,
                     });
                     // try {
-                    yield npm.publish(manifestPath);
+                    const publish = yield npm.publish(manifestPath);
                     yield client.repos.createCommitStatus({
                         owner,
                         repo,
@@ -206,6 +206,7 @@ function run() {
                         context: `Publish ${manifest.name}`,
                         description: `v0.0.0-${commitShortHash}`,
                     });
+                    return publish;
                     // } catch (error) {
                     //   throw error;
                     // }
