@@ -7,6 +7,25 @@ require('./sourcemap-register.js');module.exports =
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -24,7 +43,8 @@ exports.run = void 0;
 const core_1 = __webpack_require__(2186);
 const github_1 = __webpack_require__(5438);
 const globby_1 = __importDefault(__webpack_require__(3398));
-const npm_1 = __webpack_require__(7337);
+const semver_1 = __webpack_require__(1383);
+const npm = __importStar(__webpack_require__(7337));
 const read_manifest_1 = __webpack_require__(7315);
 /**
  * Prints errors to the GitHub Actions console
@@ -171,9 +191,11 @@ function run() {
                     });
                     debug(`Succesfully created a pending status check for ${name}`);
                     debug(`Attempting to find package on NPM`);
-                    const published = yield npm_1.getPublishedVersion(name);
+                    const published = yield npm.getPublishedVersion(name);
                     debug(`Latest published npm version for ${name} is ${published.version}`);
                     try {
+                        const newVersion = new semver_1.SemVer(`0.0.0-${sha.slice(0, 7)}`);
+                        yield npm.publishPackage(name, newVersion);
                         debug(`Attempting to update status check for ${name} to success state`);
                         yield client.repos.createCommitStatus({
                             owner,
@@ -306,10 +328,7 @@ const getPublishedVersion = (name) => __awaiter(void 0, void 0, void 0, function
         return new semver_1.SemVer(currentNpmVersionString);
     }
     catch (error) {
-        console.log(typeof error);
-        console.log(error.toString().includes('E404'));
-        console.log(error);
-        if (error && error.includes('E404')) {
+        if (error && error.toString().includes('E404')) {
             // options.debug(`The latest version of ${name} is at v0.0.0, as it was never published.`);
             return new semver_1.SemVer('0.0.0');
         }

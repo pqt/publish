@@ -22,10 +22,7 @@ export const getPublishedVersion = async (name: string): Promise<SemVer> => {
      */
     return new SemVer(currentNpmVersionString);
   } catch (error) {
-    console.log(typeof error);
-    console.log(error.toString().includes('E404'));
-    console.log(error);
-    if (error && error.includes('E404')) {
+    if (error && error.toString().includes('E404')) {
       // options.debug(`The latest version of ${name} is at v0.0.0, as it was never published.`);
       return new SemVer('0.0.0');
     }

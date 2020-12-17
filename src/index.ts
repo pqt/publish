@@ -1,7 +1,8 @@
 import { debug as log, endGroup, getInput, setFailed, startGroup } from '@actions/core';
 import { context, getOctokit } from '@actions/github';
 import globby from 'globby';
-import { getPublishedVersion } from './utils/npm';
+import { SemVer } from 'semver';
+import * as npm from './utils/npm';
 import { readManifest } from './utils/read-manifest';
 
 /**
@@ -73,7 +74,7 @@ export async function run(): Promise<void> {
      */
     const repo = context.payload.repository.name;
     const owner = context.payload.repository.owner.login;
-    const sha = context.payload.after;
+    const sha: string = context.payload.after;
 
     /**
      * Kill the action if the GITHUB_WORKSPACE environment variable is not set
@@ -166,10 +167,13 @@ export async function run(): Promise<void> {
           debug(`Succesfully created a pending status check for ${name}`);
 
           debug(`Attempting to find package on NPM`);
-          const published = await getPublishedVersion(name);
+          const published = await npm.getPublishedVersion(name);
           debug(`Latest published npm version for ${name} is ${published.version}`);
 
           try {
+            const newVersion = new SemVer(`0.0.0-${sha.slice(0, 7)}`);
+            await npm.publishPackage(name, newVersion);
+
             debug(`Attempting to update status check for ${name} to success state`);
             await client.repos.createCommitStatus({
               owner,
