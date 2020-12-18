@@ -114,7 +114,7 @@ export async function updateConfigFile(path: string, registry: URL = new URL('ht
   config = lines.join(EOL).trim() + EOL;
 
   await fs.mkdir(dirname(configPath), { recursive: true });
-  await fs.writeFile(configPath, config);
+  await fs.writeFile(path, config);
 }
 
 /**

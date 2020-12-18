@@ -446,7 +446,7 @@ function updateConfigFile(path, registry = new URL('https://registry.npmjs.org/'
         lines.push(`registry=${registry.href}`);
         config = lines.join(os_1.EOL).trim() + os_1.EOL;
         yield fs_1.promises.mkdir(path_1.dirname(configPath), { recursive: true });
-        yield fs_1.promises.writeFile(configPath, config);
+        yield fs_1.promises.writeFile(path, config);
     });
 }
 exports.updateConfigFile = updateConfigFile;
