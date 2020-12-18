@@ -96,7 +96,7 @@ export async function readConfigFile(path: string) {
 /**
  * Update the `.npmrc` file contents for the GitHub Action
  */
-export async function updateConfigFile(path: string, registry: URL = new URL('https://registry.npmjs.org')) {
+export async function updateConfigFile(path: string, registry: URL = new URL('https://registry.npmjs.org/')) {
   let config = await readConfigFile(path);
 
   const configPath = dirname(path);

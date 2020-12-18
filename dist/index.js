@@ -433,7 +433,7 @@ exports.readConfigFile = readConfigFile;
 /**
  * Update the `.npmrc` file contents for the GitHub Action
  */
-function updateConfigFile(path, registry = new URL('https://registry.npmjs.org')) {
+function updateConfigFile(path, registry = new URL('https://registry.npmjs.org/')) {
     return __awaiter(this, void 0, void 0, function* () {
         let config = yield readConfigFile(path);
         const configPath = path_1.dirname(path);
