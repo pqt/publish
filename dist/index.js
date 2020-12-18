@@ -196,20 +196,28 @@ function run() {
                         context: `Publish ${manifest.name}`,
                         description: `Starting...`,
                     });
-                    // try {
-                    const publish = yield npm.publish(manifestPath);
-                    yield client.repos.createCommitStatus({
-                        owner,
-                        repo,
-                        sha: commitHash,
-                        state: 'success',
-                        context: `Publish ${manifest.name}`,
-                        description: `v0.0.0-${commitShortHash}`,
-                    });
-                    return publish;
-                    // } catch (error) {
-                    //   throw error;
-                    // }
+                    try {
+                        const { stdout } = yield npm.publish(manifestPath);
+                        yield client.repos.createCommitStatus({
+                            owner,
+                            repo,
+                            sha: commitHash,
+                            state: 'success',
+                            context: `Publish ${manifest.name}`,
+                            description: `v0.0.0-${commitShortHash}`,
+                        });
+                        return stdout;
+                    }
+                    catch (error) {
+                        yield client.repos.createCommitStatus({
+                            owner,
+                            repo,
+                            sha: commitHash,
+                            state: 'error',
+                            context: `Publish ${manifest.name}`,
+                            description: `v0.0.0-${commitShortHash}`,
+                        });
+                    }
                 }));
                 try {
                     for (var packagesToPublish_1 = __asyncValues(packagesToPublish), packagesToPublish_1_1; packagesToPublish_1_1 = yield packagesToPublish_1.next(), !packagesToPublish_1_1.done;) {

@@ -164,22 +164,29 @@ export async function run(): Promise<void> {
           description: `Starting...`,
         });
 
-        // try {
-        const publish = await npm.publish(manifestPath);
+        try {
+          const { stdout } = await npm.publish(manifestPath);
 
-        await client.repos.createCommitStatus({
-          owner,
-          repo,
-          sha: commitHash,
-          state: 'success',
-          context: `Publish ${manifest.name}`,
-          description: `v0.0.0-${commitShortHash}`,
-        });
+          await client.repos.createCommitStatus({
+            owner,
+            repo,
+            sha: commitHash,
+            state: 'success',
+            context: `Publish ${manifest.name}`,
+            description: `v0.0.0-${commitShortHash}`,
+          });
 
-        return publish;
-        // } catch (error) {
-        //   throw error;
-        // }
+          return stdout;
+        } catch (error) {
+          await client.repos.createCommitStatus({
+            owner,
+            repo,
+            sha: commitHash,
+            state: 'error',
+            context: `Publish ${manifest.name}`,
+            description: `v0.0.0-${commitShortHash}`,
+          });
+        }
       });
 
       for await (const item of packagesToPublish) {
