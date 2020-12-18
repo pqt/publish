@@ -2,18 +2,17 @@ import ezSpawn from '@jsdevtools/ez-spawn';
 import { promises as fs } from 'fs';
 import { SemVer } from 'semver';
 import { dirname, resolve } from 'path';
+import { EOL } from 'os';
 
 /**
  * Retrieve the absolute path for the `.npmrc` file.
  *
  * IE: /home/runner/.npmrc
  */
-// export async function getConfigFile() {
-//   try {
-//   } catch (error) {
-//     throw error;
-//   }
-// }
+export async function getConfigFile() {
+  const process = await ezSpawn.async('npm', 'config', 'get', 'userconfig');
+  return process.stdout.trim();
+}
 
 /**
  * Retrieve the latest published version of a package from the registry.
@@ -76,30 +75,51 @@ export async function readManifest(path: string) {
 /**
  * Read the `.npmrc` file.
  */
-// export async function readConfig(path: string) {
-//   try {
-//   } catch (error) {
-//     throw error;
-//   }
-// }
+export async function readConfigFile(path: string) {
+  try {
+    // debug(`Reading NPM config from ${configPath}`);
+
+    const config = await fs.readFile(path, 'utf-8');
+
+    // debug(`OLD NPM CONFIG: \n${config}`);
+    return config;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      // debug("OLD NPM CONFIG: <none>");
+      return '';
+    }
+
+    throw `Unable to read the NPM config file: ${path}`;
+  }
+}
 
 /**
  * Update the `.npmrc` file contents for the GitHub Action
  */
-// export async function updateConfig(path: string, registry: URL) {
-//   try {
-//   } catch (error) {
-//     throw error;
-//   }
-// }
+export async function updateConfigFile(path: string, registry: URL = new URL('https://registry.npmjs.org')) {
+  let config = await readConfigFile(path);
+
+  const configPath = dirname(path);
+  const authDomain = registry.origin.slice(registry.protocol.length);
+
+  let lines = config.split(/\r?\n/);
+
+  // Remove any existing lines that set the registry or token
+  lines = lines.filter((line) => !(line.startsWith('registry=') || line.includes('_authToken=')));
+
+  // Append the new registry and token to the end of the file
+  lines.push(`${authDomain}/:_authToken=\${INPUT_TOKEN}`);
+  lines.push(`registry=${registry.href}`);
+
+  config = lines.join(EOL).trim() + EOL;
+
+  await fs.mkdir(dirname(configPath), { recursive: true });
+  await fs.writeFile(configPath, config);
+}
 
 /**
  * Publish a new version of a package to the registry
  */
 export async function publish(path: string) {
   return await ezSpawn.async(['npm', 'publish', '--dry-run'], { cwd: resolve(dirname(path)) });
-  // try {
-  // } catch (error) {
-  //   throw error;
-  // }
 }

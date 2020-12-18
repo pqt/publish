@@ -12,11 +12,24 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.publish = exports.readManifest = void 0;
+exports.publish = exports.updateConfigFile = exports.readConfigFile = exports.readManifest = exports.getConfigFile = void 0;
 const ez_spawn_1 = __importDefault(require("@jsdevtools/ez-spawn"));
 const fs_1 = require("fs");
 const semver_1 = require("semver");
 const path_1 = require("path");
+const os_1 = require("os");
+/**
+ * Retrieve the absolute path for the `.npmrc` file.
+ *
+ * IE: /home/runner/.npmrc
+ */
+function getConfigFile() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const process = yield ez_spawn_1.default.async('npm', 'config', 'get', 'userconfig');
+        return process.stdout.trim();
+    });
+}
+exports.getConfigFile = getConfigFile;
 /**
  * Read package manifest
  */
@@ -60,31 +73,50 @@ exports.readManifest = readManifest;
 /**
  * Read the `.npmrc` file.
  */
-// export async function readConfig(path: string) {
-//   try {
-//   } catch (error) {
-//     throw error;
-//   }
-// }
+function readConfigFile(path) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            // debug(`Reading NPM config from ${configPath}`);
+            const config = yield fs_1.promises.readFile(path, 'utf-8');
+            // debug(`OLD NPM CONFIG: \n${config}`);
+            return config;
+        }
+        catch (error) {
+            if (error.code === 'ENOENT') {
+                // debug("OLD NPM CONFIG: <none>");
+                return '';
+            }
+            throw `Unable to read the NPM config file: ${path}`;
+        }
+    });
+}
+exports.readConfigFile = readConfigFile;
 /**
  * Update the `.npmrc` file contents for the GitHub Action
  */
-// export async function updateConfig(path: string, registry: URL) {
-//   try {
-//   } catch (error) {
-//     throw error;
-//   }
-// }
+function updateConfigFile(path, registry = new URL('https://registry.npmjs.org')) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let config = yield readConfigFile(path);
+        const configPath = path_1.dirname(path);
+        const authDomain = registry.origin.slice(registry.protocol.length);
+        let lines = config.split(/\r?\n/);
+        // Remove any existing lines that set the registry or token
+        lines = lines.filter((line) => !(line.startsWith('registry=') || line.includes('_authToken=')));
+        // Append the new registry and token to the end of the file
+        lines.push(`${authDomain}/:_authToken=\${INPUT_TOKEN}`);
+        lines.push(`registry=${registry.href}`);
+        config = lines.join(os_1.EOL).trim() + os_1.EOL;
+        yield fs_1.promises.mkdir(path_1.dirname(configPath), { recursive: true });
+        yield fs_1.promises.writeFile(configPath, config);
+    });
+}
+exports.updateConfigFile = updateConfigFile;
 /**
  * Publish a new version of a package to the registry
  */
 function publish(path) {
     return __awaiter(this, void 0, void 0, function* () {
         return yield ez_spawn_1.default.async(['npm', 'publish', '--dry-run'], { cwd: path_1.resolve(path_1.dirname(path)) });
-        // try {
-        // } catch (error) {
-        //   throw error;
-        // }
     });
 }
 exports.publish = publish;

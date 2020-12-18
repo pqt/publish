@@ -150,6 +150,13 @@ export async function run(): Promise<void> {
         return;
       }
 
+      debug('Updating .npmrc file');
+      const npmConfigPath = await npm.getConfigFile();
+      await npm.updateConfigFile(npmConfigPath);
+
+      debug('.npmrc file reads:');
+      console.log(await npm.readConfigFile(npmConfigPath));
+
       debug('Starting to create status checks for each package that needs to be published');
 
       const packagesToPublish = packageManifests.map(async (manifestPath) => {
