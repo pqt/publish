@@ -49,6 +49,15 @@ function readManifest(path) {
 }
 exports.readManifest = readManifest;
 /**
+ * Update the package manifest version
+ */
+// export async function updateManifest(path: string, version: SemVer) {
+//   try {
+//   } catch (error) {
+//     throw `Unable to update manifest at ${path} to version ${version}`;
+//   }
+// }
+/**
  * Read the `.npmrc` file.
  */
 // export async function readConfig(path: string) {
