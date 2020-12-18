@@ -194,6 +194,7 @@ function run() {
                 debug('Starting to create status checks for each package that needs to be published');
                 const packagesToPublish = packageManifests.map((manifestPath) => __awaiter(this, void 0, void 0, function* () {
                     const manifest = yield npm.readManifest(manifestPath);
+                    debug(`Creating "pending" commit status for ${manifest.name}`);
                     yield client.repos.createCommitStatus({
                         owner,
                         repo,
@@ -203,18 +204,24 @@ function run() {
                         description: `Starting...`,
                     });
                     try {
-                        const { stdout } = yield npm.publish(manifestPath, new semver_1.SemVer(`0.0.0-${commitShortHash}`));
+                        const publishVersion = new semver_1.SemVer(`0.0.0-${commitShortHash}`);
+                        debug(`Attempting to publish ${manifest.name} v${publishVersion.version}`);
+                        const { stdout } = yield npm.publish(manifestPath, publishVersion);
+                        debug(`Successfully published ${manifest.name} v${publishVersion.version}`);
+                        debug(`Creating "success" commit status for ${manifest.name}`);
                         yield client.repos.createCommitStatus({
                             owner,
                             repo,
                             sha: commitHash,
                             state: 'success',
                             context: `Publish ${manifest.name}`,
-                            description: `v0.0.0-${commitShortHash}`,
+                            description: publishVersion.version,
                         });
                         return stdout;
                     }
                     catch (error) {
+                        debug(`Failed to publish ${manifest.name}`);
+                        debug(`Creating "error" commit status for ${manifest.name}`);
                         yield client.repos.createCommitStatus({
                             owner,
                             repo,

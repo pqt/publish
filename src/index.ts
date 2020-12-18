@@ -160,10 +160,10 @@ export async function run(): Promise<void> {
       // console.log(await npm.readConfigFile(npmConfigPath));
 
       debug('Starting to create status checks for each package that needs to be published');
-
       const packagesToPublish = packageManifests.map(async (manifestPath) => {
         const manifest = await npm.readManifest(manifestPath);
 
+        debug(`Creating "pending" commit status for ${manifest.name}`);
         await client.repos.createCommitStatus({
           owner,
           repo,
@@ -174,19 +174,24 @@ export async function run(): Promise<void> {
         });
 
         try {
-          const { stdout } = await npm.publish(manifestPath, new SemVer(`0.0.0-${commitShortHash}`));
-
+          const publishVersion = new SemVer(`0.0.0-${commitShortHash}`);
+          debug(`Attempting to publish ${manifest.name} v${publishVersion.version}`);
+          const { stdout } = await npm.publish(manifestPath, publishVersion);
+          debug(`Successfully published ${manifest.name} v${publishVersion.version}`);
+          debug(`Creating "success" commit status for ${manifest.name}`);
           await client.repos.createCommitStatus({
             owner,
             repo,
             sha: commitHash,
             state: 'success',
             context: `Publish ${manifest.name}`,
-            description: `v0.0.0-${commitShortHash}`,
+            description: publishVersion.version,
           });
 
           return stdout;
         } catch (error) {
+          debug(`Failed to publish ${manifest.name}`);
+          debug(`Creating "error" commit status for ${manifest.name}`);
           await client.repos.createCommitStatus({
             owner,
             repo,
