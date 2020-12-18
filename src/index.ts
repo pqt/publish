@@ -1,6 +1,8 @@
 import { debug as log, endGroup, getInput, setFailed, startGroup } from '@actions/core';
 import { context, getOctokit } from '@actions/github';
 import globby from 'globby';
+import { version } from 'prettier';
+import { SemVer } from 'semver';
 // import { SemVer } from 'semver';
 import * as npm from './utils/npm';
 // import { readManifest } from './utils/read-manifest';
@@ -154,8 +156,8 @@ export async function run(): Promise<void> {
       const npmConfigPath = await npm.getConfigFile();
       await npm.updateConfigFile(npmConfigPath);
 
-      debug('.npmrc file reads:');
-      console.log(await npm.readConfigFile(npmConfigPath));
+      // debug('.npmrc file reads:');
+      // console.log(await npm.readConfigFile(npmConfigPath));
 
       debug('Starting to create status checks for each package that needs to be published');
 
@@ -172,7 +174,7 @@ export async function run(): Promise<void> {
         });
 
         try {
-          const { stdout } = await npm.publish(manifestPath);
+          const { stdout } = await npm.publish(manifestPath, new SemVer(`0.0.0-${commitShortHash}`));
 
           await client.repos.createCommitStatus({
             owner,

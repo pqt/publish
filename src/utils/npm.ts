@@ -65,12 +65,11 @@ export async function readManifest(path: string) {
 /**
  * Update the package manifest version
  */
-// export async function updateManifest(path: string, version: SemVer) {
-//   try {
-//   } catch (error) {
-//     throw `Unable to update manifest at ${path} to version ${version}`;
-//   }
-// }
+export async function updateManifest(path: string, version: SemVer) {
+  const config = await readManifest(path);
+  const newConfig = JSON.stringify({ name: config.name, version: version.version });
+  await fs.writeFile(path, newConfig);
+}
 
 /**
  * Read the `.npmrc` file.
@@ -120,6 +119,12 @@ export async function updateConfigFile(path: string, registry: URL = new URL('ht
 /**
  * Publish a new version of a package to the registry
  */
-export async function publish(path: string) {
-  return await ezSpawn.async(['npm', 'publish', '--dry-run'], { cwd: resolve(dirname(path)) });
+export async function publish(path: string, version: SemVer) {
+  await updateManifest(path, version);
+  const command = [
+    'npm',
+    'publish',
+    // '--dry-run'
+  ];
+  return await ezSpawn.async(command, { cwd: resolve(dirname(path)) });
 }

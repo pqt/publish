@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.publish = exports.updateConfigFile = exports.readConfigFile = exports.readManifest = exports.getConfigFile = void 0;
+exports.publish = exports.updateConfigFile = exports.readConfigFile = exports.updateManifest = exports.readManifest = exports.getConfigFile = void 0;
 const ez_spawn_1 = __importDefault(require("@jsdevtools/ez-spawn"));
 const fs_1 = require("fs");
 const semver_1 = require("semver");
@@ -64,12 +64,14 @@ exports.readManifest = readManifest;
 /**
  * Update the package manifest version
  */
-// export async function updateManifest(path: string, version: SemVer) {
-//   try {
-//   } catch (error) {
-//     throw `Unable to update manifest at ${path} to version ${version}`;
-//   }
-// }
+function updateManifest(path, version) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const config = yield readManifest(path);
+        const newConfig = JSON.stringify({ name: config.name, version: version.version });
+        yield fs_1.promises.writeFile(path, newConfig);
+    });
+}
+exports.updateManifest = updateManifest;
 /**
  * Read the `.npmrc` file.
  */
@@ -114,9 +116,14 @@ exports.updateConfigFile = updateConfigFile;
 /**
  * Publish a new version of a package to the registry
  */
-function publish(path) {
+function publish(path, version) {
     return __awaiter(this, void 0, void 0, function* () {
-        return yield ez_spawn_1.default.async(['npm', 'publish', '--dry-run'], { cwd: path_1.resolve(path_1.dirname(path)) });
+        yield updateManifest(path, version);
+        const command = [
+            'npm',
+            'publish',
+        ];
+        return yield ez_spawn_1.default.async(command, { cwd: path_1.resolve(path_1.dirname(path)) });
     });
 }
 exports.publish = publish;
