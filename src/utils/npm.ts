@@ -10,7 +10,10 @@ import { EOL } from 'os';
  * IE: /home/runner/.npmrc
  */
 export async function getConfigFile() {
+  console.log('Start getConfigFile Function');
   const process = await ezSpawn.async('npm', 'config', 'get', 'userconfig');
+  console.log('Config Location:');
+  console.log(process.stdout.trim());
   return process.stdout.trim();
 }
 
@@ -34,6 +37,7 @@ interface Manifest {
  * Read package manifest
  */
 export async function readManifest(path: string) {
+  console.log('Start readManifest Function');
   let json: string;
 
   try {
@@ -55,6 +59,7 @@ export async function readManifest(path: string) {
     };
 
     // debug && debug("MANIFEST:", manifest);
+    console.log(JSON.stringify(manifest));
     return manifest;
   } catch (error) {
     // throw ono(error, `Unable to parse ${path}`);
@@ -66,15 +71,18 @@ export async function readManifest(path: string) {
  * Update the package manifest version
  */
 export async function updateManifest(path: string, version: SemVer) {
+  console.log('Start updateManifest Function');
   const config = await readManifest(path);
   const newConfig = JSON.stringify({ name: config.name, version: version.version });
   await fs.writeFile(path, newConfig);
+  console.log(JSON.stringify(await readManifest(path)));
 }
 
 /**
  * Read the `.npmrc` file.
  */
 export async function readConfigFile(path: string) {
+  console.log('Start readConfigFile Function');
   try {
     // debug(`Reading NPM config from ${configPath}`);
 
@@ -96,6 +104,7 @@ export async function readConfigFile(path: string) {
  * Update the `.npmrc` file contents for the GitHub Action
  */
 export async function updateConfigFile(path: string, registry: URL = new URL('https://registry.npmjs.org/')) {
+  console.log('Start updateConfigFile Function');
   let config = await readConfigFile(path);
 
   const configPath = dirname(path);
@@ -120,6 +129,7 @@ export async function updateConfigFile(path: string, registry: URL = new URL('ht
  * Publish a new version of a package to the registry
  */
 export async function publish(path: string, version: SemVer) {
+  console.log('Start publish Function');
   await updateManifest(path, version);
   const command = [
     'npm',
@@ -128,5 +138,7 @@ export async function publish(path: string, version: SemVer) {
     '--access public',
     // '--dry-run'
   ];
-  return await ezSpawn.async(command, { cwd: resolve(dirname(path)) });
+  const publish = await ezSpawn.async(command, { cwd: resolve(dirname(path)) });
+  console.log(publish);
+  return publish;
 }

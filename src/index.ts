@@ -201,7 +201,7 @@ export async function run(): Promise<void> {
             description: `v0.0.0-${commitShortHash}`,
           });
 
-          throw new Error(error);
+          throw new Error(`Failed to publish ${manifest.name}`);
         }
       });
 

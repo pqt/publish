@@ -230,7 +230,7 @@ function run() {
                             context: `Publish ${manifest.name}`,
                             description: `v0.0.0-${commitShortHash}`,
                         });
-                        throw new Error(error);
+                        throw new Error(`Failed to publish ${manifest.name}`);
                     }
                 }));
                 try {
@@ -373,7 +373,10 @@ const os_1 = __webpack_require__(2087);
  */
 function getConfigFile() {
     return __awaiter(this, void 0, void 0, function* () {
+        console.log('Start getConfigFile Function');
         const process = yield ez_spawn_1.default.async('npm', 'config', 'get', 'userconfig');
+        console.log('Config Location:');
+        console.log(process.stdout.trim());
         return process.stdout.trim();
     });
 }
@@ -383,6 +386,7 @@ exports.getConfigFile = getConfigFile;
  */
 function readManifest(path) {
     return __awaiter(this, void 0, void 0, function* () {
+        console.log('Start readManifest Function');
         let json;
         try {
             json = yield fs_1.promises.readFile(path, 'utf-8');
@@ -400,6 +404,7 @@ function readManifest(path) {
                 version: new semver_1.SemVer(version),
             };
             // debug && debug("MANIFEST:", manifest);
+            console.log(JSON.stringify(manifest));
             return manifest;
         }
         catch (error) {
@@ -414,9 +419,11 @@ exports.readManifest = readManifest;
  */
 function updateManifest(path, version) {
     return __awaiter(this, void 0, void 0, function* () {
+        console.log('Start updateManifest Function');
         const config = yield readManifest(path);
         const newConfig = JSON.stringify({ name: config.name, version: version.version });
         yield fs_1.promises.writeFile(path, newConfig);
+        console.log(JSON.stringify(yield readManifest(path)));
     });
 }
 exports.updateManifest = updateManifest;
@@ -425,6 +432,7 @@ exports.updateManifest = updateManifest;
  */
 function readConfigFile(path) {
     return __awaiter(this, void 0, void 0, function* () {
+        console.log('Start readConfigFile Function');
         try {
             // debug(`Reading NPM config from ${configPath}`);
             const config = yield fs_1.promises.readFile(path, 'utf-8');
@@ -446,6 +454,7 @@ exports.readConfigFile = readConfigFile;
  */
 function updateConfigFile(path, registry = new URL('https://registry.npmjs.org/')) {
     return __awaiter(this, void 0, void 0, function* () {
+        console.log('Start updateConfigFile Function');
         let config = yield readConfigFile(path);
         const configPath = path_1.dirname(path);
         const authDomain = registry.origin.slice(registry.protocol.length);
@@ -466,6 +475,7 @@ exports.updateConfigFile = updateConfigFile;
  */
 function publish(path, version) {
     return __awaiter(this, void 0, void 0, function* () {
+        console.log('Start publish Function');
         yield updateManifest(path, version);
         const command = [
             'npm',
@@ -473,7 +483,9 @@ function publish(path, version) {
             '--tag canary',
             '--access public',
         ];
-        return yield ez_spawn_1.default.async(command, { cwd: path_1.resolve(path_1.dirname(path)) });
+        const publish = yield ez_spawn_1.default.async(command, { cwd: path_1.resolve(path_1.dirname(path)) });
+        console.log(publish);
+        return publish;
     });
 }
 exports.publish = publish;
