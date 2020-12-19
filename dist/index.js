@@ -95,8 +95,8 @@ function run() {
             const BUILD_FOLDER = 'dist';
             const CANARY_PACKAGES = true;
             const DRY_RUN = true;
-            const GITHUB_TOKEN = core_1.getInput('GITHUB_TOKEN', { required: true });
-            const NPM_TOKEN = core_1.getInput('NPM_TOKEN', { required: true });
+            // const GITHUB_TOKEN = getInput('GITHUB_TOKEN', { required: true });
+            // const NPM_TOKEN = getInput('NPM_TOKEN', { required: true });
             /**
              * Log the full context for debugging purposes
              */
@@ -121,6 +121,22 @@ function run() {
             const commitHash = github_1.context.payload.after;
             const commitShortHash = commitHash.slice(0, 7);
             /**
+             * Kill the action if the GITHUB_TOKEN environment variable is not set
+             */
+            if (typeof process.env.GITHUB_TOKEN === 'undefined') {
+                core_1.setFailed('GITHUB_TOKEN environment variable is not set.');
+                return;
+            }
+            debug('Passed the GITHUB_TOKEN environment variable check');
+            /**
+             * Kill the action if the NPM_TOKEN environment variable is not set
+             */
+            if (typeof process.env.NPM_TOKEN === 'undefined') {
+                core_1.setFailed('NPM_TOKEN environment variable is not set.');
+                return;
+            }
+            debug('Passed the NPM_TOKEN environment variable check');
+            /**
              * Kill the action if the GITHUB_WORKSPACE environment variable is not set
              */
             if (typeof process.env.GITHUB_WORKSPACE === 'undefined') {
@@ -136,7 +152,7 @@ function run() {
             /**
              * Instantiate a GitHub Client instance
              */
-            const client = github_1.getOctokit(GITHUB_TOKEN);
+            const client = github_1.getOctokit(process.env.GITHUB_TOKEN);
             debug('Instantiated GitHub Client');
             /**
              * Enforce we're not running the action on every push (unless it's on the default branch)

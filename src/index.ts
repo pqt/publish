@@ -50,8 +50,8 @@ export async function run(): Promise<void> {
     const BUILD_FOLDER = 'dist';
     const CANARY_PACKAGES = true;
     const DRY_RUN = true;
-    const GITHUB_TOKEN = getInput('GITHUB_TOKEN', { required: true });
-    const NPM_TOKEN = getInput('NPM_TOKEN', { required: true });
+    // const GITHUB_TOKEN = getInput('GITHUB_TOKEN', { required: true });
+    // const NPM_TOKEN = getInput('NPM_TOKEN', { required: true });
 
     /**
      * Log the full context for debugging purposes
@@ -81,6 +81,24 @@ export async function run(): Promise<void> {
     const commitShortHash = commitHash.slice(0, 7);
 
     /**
+     * Kill the action if the GITHUB_TOKEN environment variable is not set
+     */
+    if (typeof process.env.GITHUB_TOKEN === 'undefined') {
+      setFailed('GITHUB_TOKEN environment variable is not set.');
+      return;
+    }
+    debug('Passed the GITHUB_TOKEN environment variable check');
+
+    /**
+     * Kill the action if the NPM_TOKEN environment variable is not set
+     */
+    if (typeof process.env.NPM_TOKEN === 'undefined') {
+      setFailed('NPM_TOKEN environment variable is not set.');
+      return;
+    }
+    debug('Passed the NPM_TOKEN environment variable check');
+
+    /**
      * Kill the action if the GITHUB_WORKSPACE environment variable is not set
      */
     if (typeof process.env.GITHUB_WORKSPACE === 'undefined') {
@@ -98,7 +116,7 @@ export async function run(): Promise<void> {
     /**
      * Instantiate a GitHub Client instance
      */
-    const client = getOctokit(GITHUB_TOKEN);
+    const client = getOctokit(process.env.GITHUB_TOKEN);
     debug('Instantiated GitHub Client');
 
     /**
