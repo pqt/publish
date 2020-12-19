@@ -133,8 +133,8 @@ function publish(path, version) {
             const command = [
                 'npm',
                 'publish',
-                '--tag canary',
-                '--access public',
+                '--tag=canary',
+                '--access=public',
             ];
             const publish = yield ez_spawn_1.default.async(command, { cwd: path_1.resolve(path_1.dirname(path)) });
             console.log(publish);

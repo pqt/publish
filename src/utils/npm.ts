@@ -135,8 +135,8 @@ export async function publish(path: string, version: SemVer) {
     const command = [
       'npm',
       'publish',
-      '--tag canary',
-      '--access public',
+      '--tag=canary',
+      '--access=public',
       // '--dry-run'
     ];
     const publish = await ezSpawn.async(command, { cwd: resolve(dirname(path)) });
