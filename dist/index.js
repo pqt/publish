@@ -230,12 +230,13 @@ function run() {
                             context: `Publish ${manifest.name}`,
                             description: `v0.0.0-${commitShortHash}`,
                         });
+                        throw new Error(error);
                     }
                 }));
                 try {
                     for (var packagesToPublish_1 = __asyncValues(packagesToPublish), packagesToPublish_1_1; packagesToPublish_1_1 = yield packagesToPublish_1.next(), !packagesToPublish_1_1.done;) {
                         const item = packagesToPublish_1_1.value;
-                        console.log(item);
+                        debug(item);
                     }
                 }
                 catch (e_1_1) { e_1 = { error: e_1_1 }; }

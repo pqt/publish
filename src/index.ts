@@ -200,11 +200,13 @@ export async function run(): Promise<void> {
             context: `Publish ${manifest.name}`,
             description: `v0.0.0-${commitShortHash}`,
           });
+
+          throw new Error(error);
         }
       });
 
       for await (const item of packagesToPublish) {
-        console.log(item);
+        debug(item);
       }
 
       // await Promise.all(
