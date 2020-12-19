@@ -46,7 +46,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.run = void 0;
+exports.run = exports.debug = void 0;
 const core_1 = __webpack_require__(2186);
 const github_1 = __webpack_require__(5438);
 const globby_1 = __importDefault(__webpack_require__(3398));
@@ -77,6 +77,7 @@ function debug(message, data) {
     core_1.debug(message);
     return;
 }
+exports.debug = debug;
 /**
  * The entrypoint for the GitHub Action
  */
@@ -492,16 +493,22 @@ exports.updateConfigFile = updateConfigFile;
 function publish(path, version) {
     return __awaiter(this, void 0, void 0, function* () {
         console.log('Start publish Function');
-        yield updateManifest(path, version);
-        const command = [
-            'npm',
-            'publish',
-            '--tag canary',
-            '--access public',
-        ];
-        const publish = yield ez_spawn_1.default.async(command, { cwd: path_1.resolve(path_1.dirname(path)) });
-        console.log(publish);
-        return publish;
+        try {
+            yield updateManifest(path, version);
+            const command = [
+                'npm',
+                'publish',
+                '--tag canary',
+                '--access public',
+            ];
+            const publish = yield ez_spawn_1.default.async(command, { cwd: path_1.resolve(path_1.dirname(path)) });
+            console.log(publish);
+            return publish;
+        }
+        catch (error) {
+            console.log(error);
+            throw `Failed to publish package`;
+        }
     });
 }
 exports.publish = publish;

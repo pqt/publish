@@ -128,16 +128,22 @@ exports.updateConfigFile = updateConfigFile;
 function publish(path, version) {
     return __awaiter(this, void 0, void 0, function* () {
         console.log('Start publish Function');
-        yield updateManifest(path, version);
-        const command = [
-            'npm',
-            'publish',
-            '--tag canary',
-            '--access public',
-        ];
-        const publish = yield ez_spawn_1.default.async(command, { cwd: path_1.resolve(path_1.dirname(path)) });
-        console.log(publish);
-        return publish;
+        try {
+            yield updateManifest(path, version);
+            const command = [
+                'npm',
+                'publish',
+                '--tag canary',
+                '--access public',
+            ];
+            const publish = yield ez_spawn_1.default.async(command, { cwd: path_1.resolve(path_1.dirname(path)) });
+            console.log(publish);
+            return publish;
+        }
+        catch (error) {
+            console.log(error);
+            throw `Failed to publish package`;
+        }
     });
 }
 exports.publish = publish;

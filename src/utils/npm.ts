@@ -130,15 +130,20 @@ export async function updateConfigFile(path: string, registry: URL = new URL('ht
  */
 export async function publish(path: string, version: SemVer) {
   console.log('Start publish Function');
-  await updateManifest(path, version);
-  const command = [
-    'npm',
-    'publish',
-    '--tag canary',
-    '--access public',
-    // '--dry-run'
-  ];
-  const publish = await ezSpawn.async(command, { cwd: resolve(dirname(path)) });
-  console.log(publish);
-  return publish;
+  try {
+    await updateManifest(path, version);
+    const command = [
+      'npm',
+      'publish',
+      '--tag canary',
+      '--access public',
+      // '--dry-run'
+    ];
+    const publish = await ezSpawn.async(command, { cwd: resolve(dirname(path)) });
+    console.log(publish);
+    return publish;
+  } catch (error) {
+    console.log(error);
+    throw `Failed to publish package`;
+  }
 }

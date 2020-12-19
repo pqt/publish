@@ -21,7 +21,7 @@ function errorHandler(error: Error): void {
  * @param message debug synopsis
  * @param data optional object of contextually relevant data
  */
-function debug(message: string, data?: object): void {
+export function debug(message: string, data?: object): void {
   if (data) {
     startGroup(message);
     log(JSON.stringify(data));
