@@ -116,7 +116,7 @@ export async function updateConfigFile(path: string, registry: URL = new URL('ht
   lines = lines.filter((line) => !(line.startsWith('registry=') || line.includes('_authToken=')));
 
   // Append the new registry and token to the end of the file
-  lines.push(`${authDomain}/:_authToken=\${INPUT_TOKEN}`);
+  lines.push(`${authDomain}/:_authToken=\${NPM_TOKEN}`);
   lines.push(`registry=${registry.href}`);
 
   config = lines.join(EOL).trim() + EOL;

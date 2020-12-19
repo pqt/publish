@@ -114,7 +114,7 @@ function updateConfigFile(path, registry = new URL('https://registry.npmjs.org/'
         // Remove any existing lines that set the registry or token
         lines = lines.filter((line) => !(line.startsWith('registry=') || line.includes('_authToken=')));
         // Append the new registry and token to the end of the file
-        lines.push(`${authDomain}/:_authToken=\${INPUT_TOKEN}`);
+        lines.push(`${authDomain}/:_authToken=\${NPM_TOKEN}`);
         lines.push(`registry=${registry.href}`);
         config = lines.join(os_1.EOL).trim() + os_1.EOL;
         yield fs_1.promises.mkdir(path_1.dirname(configPath), { recursive: true });
