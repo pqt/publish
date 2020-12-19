@@ -77,7 +77,7 @@ export async function run(): Promise<void> {
      */
     const repo = context.payload.repository.name;
     const owner = context.payload.repository.owner.login;
-    const commitHash: string = context.payload.after;
+    const commitHash = context.sha;
     const commitShortHash = commitHash.slice(0, 7);
 
     /**

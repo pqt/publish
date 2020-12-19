@@ -119,7 +119,7 @@ function run() {
              */
             const repo = github_1.context.payload.repository.name;
             const owner = github_1.context.payload.repository.owner.login;
-            const commitHash = github_1.context.payload.after;
+            const commitHash = github_1.context.sha;
             const commitShortHash = commitHash.slice(0, 7);
             /**
              * Kill the action if the GITHUB_TOKEN environment variable is not set
